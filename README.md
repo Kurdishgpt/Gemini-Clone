@@ -28,8 +28,8 @@ This project was built using the following technologies:
 
 Want to check out the code? It's super easy! Just run the following command in your terminal:
 
-```bash
-git clone git@github.com:GourangaDasSamrat/Gemini-Clone.git
+
+ git clone git@github.com:GourangaDasSamrat/Gemini-Clone.git
 
 Then, open the index.html file in your favorite web browser and explore! 🤓
 Important Note: Please be aware that I have included my personal API key in this project for demonstration purposes. If you plan to use this for anything beyond personal exploration, I highly recommend you replace it with your own API key for security reasons. 🔒
