@@ -28,11 +28,21 @@ This project was built using the following technologies:
 
 Want to check out the code? It's super easy! Just run the following command in your terminal:
 
+1.  Clone this repository:
+    ```bash
+    git clone git@github.com:GourangaDasSamrat/Gemini-Clone.git
+    
+2.  Navigate to the project directory:
+    ```bash
+    cd Gemini-Clone
+    ```
+3.  Open the `index.html` file in your favorite web browser and explore! 🤓
 
- git clone git@github.com:GourangaDasSamrat/Gemini-Clone.git
+or
 
-Then, open the index.html file in your favorite web browser and explore! 🤓
-Important Note: Please be aware that I have included my personal API key in this project for demonstration purposes. If you plan to use this for anything beyond personal exploration, I highly recommend you replace it with your own API key for security reasons. 🔒
+**[Click here](https://geminiclonebygouranga.netlify.app/) to see this project on internet.**
+
+### Important Note: Please be aware that I have included my personal API key in this project for demonstration purposes. If you plan to use this for anything beyond personal exploration, I highly recommend you replace it with your own API key for security reasons. 🔒
 
 ## ⚠️ Disclaimer
 This project is a personal creation and is not affiliated with or endorsed by Google or the official Gemini product. Its built purely for educational and demonstration purposes. 😊
