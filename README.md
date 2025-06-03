@@ -90,16 +90,6 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 
 Gouranga Das Samrat
 
-- 📘 [Facebook](https://www.facebook.com/gourangadassamrat)
-- 🐦 [Twitter](https://x.com/gouranga_khulna)
-- 🎬 [YouTube Channel](https://www.youtube.com/@GourangaDasSamrat)
-- 💼 [LinkedIn](https://linkedin.com/in/gouranga-das-samrat)
-- 💻 [Code Pen](https://codepen.io/gouranga-das-samrat)
-- 🚀 [Leetcode](https://leetcode.com/u/cqq98g0hw0/)
-- 🎨 [Protfolio](https://gourangadas.netlify.app/)
-- ✍️ [Bloger](https://gourangadassamrat.blogspot.com/)
-- 🐙 [Github](https://github.com/GourangaDasSamrat)
-
 ## 🔗 Connect with Me
 
 <div align="center">
@@ -112,6 +102,9 @@ Gouranga Das Samrat
 [![Medium](https://img.shields.io/badge/Medium-12100E?style=for-the-badge&logo=medium&logoColor=white)](https://medium.com/@gouranga.das.khulna)
 [![CodePen](https://img.shields.io/badge/CodePen-000000?style=for-the-badge&logo=codepen&logoColor=white)](https://codepen.io/gouranga-das-samrat)
 [![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:gouranga.das.khulna@gmail.com)
+[![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?style=for-the-badge&logo=YouTube&logoColor=white)](https://www.youtube.com/@GourangaDasSamrat)
+[![LeetCode](https://img.shields.io/badge/LeetCode-000000?style=for-the-badge&logo=LeetCode&logoColor=#d16c06)](https://leetcode.com/u/cqq98g0hw0/)
+[![Blogger](https://img.shields.io/badge/Blogger-FF5722?style=for-the-badge&logo=blogger&logoColor=white)](https://gourangadassamrat.blogspot.com/)
 
 </div>
 
