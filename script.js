@@ -11,6 +11,14 @@ let isGeneratingResponse = false;
 
 import config from "./config.js";
 
+// Initialize highlight.js with common languages
+hljs.configure({
+    languages: ['javascript', 'python', 'bash', 'typescript', 'json', 'html', 'css']
+});
+
+// Initialize highlight.js
+hljs.highlightAll();
+
 const API_REQUEST_URL = `${config.API_BASE_URL}/models/${config.MODEL_NAME}:generateContent?key=${config.GEMINI_API_KEY}`;
 
 // Load saved data from local storage
