@@ -15,6 +15,12 @@
 
 </div>
 
+## 📹 Demo Video
+
+[Screencast from 2025-06-06 11-43-36.webm](https://github.com/user-attachments/assets/14521c1a-bd84-41b3-bceb-d1817f596a41)
+
+
+
 ## 📌 Introduction
 
 Welcome to the Gemini AI Chat Application! This is a fully functional AI chat application powered by Google's Gemini API. Experience natural conversations, code assistance, and creative content generation through a beautifully designed, responsive web application. This project demonstrates the practical implementation of AI capabilities using modern web technologies.
