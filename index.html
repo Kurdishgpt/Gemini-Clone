@@ -1,219 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Chat</title>
-  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+  <head>
+    <meta
+      name="description"
+      content="Explore the power of advanced AI with Kurdish GPT! ✨ Experience smart Kurdish-language interaction and cutting-edge AI features. 🤖"
+    />
+    <meta
+      name="keywords"
+      content="Kurdish GPT, AI, chatbot, Kurdish AI, artificial intelligence, NLP, machine learning, assistant, technology, chat"
+    />
+    <meta name="author" content="Gouranga Das Samrat" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="en" />
 
-    body {
-      font-family: "Poppins", sans-serif;
-      background-color: #0d1117;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
+    <meta property="og:title" content="Kurdish GPT 🚀" />
+    <meta
+      property="og:description"
+      content="Explore the power of advanced AI with Kurdish GPT! ✨ Chat, learn, and create smarter with Kurdish GPT. 🤖"
+    />
+    <meta
+      property="og:image"
+      content="URL_TO_YOUR_WEBSITE_LOGO_OR_A_REPRESENTATIVE_SCREENSHOT"
+    />
+    <meta
+      property="og:url"
+      content="https://kurdishgpt.netlify.app/"
+    />
+    <meta property="og:type" content="website" />
 
-    /* Header with language buttons */
-    header {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      padding: 15px;
-      border-bottom: 1px solid #1f2937;
-      background: #0d1117;
-    }
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kurdish GPT 🚀" />
+    <meta
+      name="twitter:description"
+      content="Explore the power of advanced AI with Kurdish GPT! ✨ Chat, learn, and create smarter with Kurdish GPT. 🤖"
+    />
+    <meta
+      name="twitter:image"
+      content="URL_TO_YOUR_WEBSITE_LOGO_OR_A_REPRESENTATIVE_SCREENSHOT"
+    />
+    <meta
+      name="twitter:url"
+      content="https://kurdishgpt.netlify.app/"
+    />
+    <meta name="google-adsense-account" content="ca-pub-8784624020948059" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="assets/highlight-js/styles/github-dark.css" />
+    <link href="assets/boxicons-2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="shortcut icon" href="assets/kurdish-gpt.svg" type="image/x-icon" />
+    <script src="assets/highlight-js/highlight.min.js"></script>
+    <script src="assets/marked/marked.min.js"></script>
+    <title>Kurdish GPT</title>
+  </head>
 
-    .lang-btn {
-      background: none;
-      border: 1px solid #1f2937;
-      padding: 8px 20px;
-      border-radius: 8px;
-      color: #fff;
-      cursor: pointer;
-      transition: 0.3s;
-    }
+  <body>
+    <nav class="navbar">
+      <h3 class="navbar__logo">Kurdish GPT</h3>
+      <button class="navbar__button" id="themeToggler">
+        <i class="bx bx-sun"></i>
+      </button>
+    </nav>
 
-    .lang-btn.active {
-      background: #2563eb;
-      border-color: #2563eb;
-    }
+    <header class="header">
+      <div class="header__title">
+        <h1>Slaw! 👋</h1>
+        <h2>How can Kurdish GPT help you today?</h2>
+      </div>
+      <div class="suggests">
+        <div class="suggests__item">
+          <p class="suggests__item-text">
+            Give tips on helping kids finish their homework on time
+          </p>
+          <div class="suggests__item-icon">
+            <i class="bx bx-stopwatch"></i>
+          </div>
+        </div>
+        <div class="suggests__item">
+          <p class="suggests__item-text">
+            Help me write an out-of-office email
+          </p>
+          <div class="suggests__item-icon">
+            <i class="bx bx-edit-alt"></i>
+          </div>
+        </div>
+        <div class="suggests__item">
+          <p class="suggests__item-text">
+            Give me phrases to learn a new language
+          </p>
+          <div class="suggests__item-icon">
+            <i class="bx bx-compass"></i>
+          </div>
+        </div>
+        <div class="suggests__item">
+          <p class="suggests__item-text">
+            Show me how to build something by hand
+          </p>
+          <div class="suggests__item-icon">
+            <i class="bx bx-wrench"></i>
+          </div>
+        </div>
+      </div>
+    </header>
 
-    /* Chat container */
-    .chat-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      justify-content: center;
-      padding: 20px;
-      overflow-y: auto;
-    }
+    <section class="chats"></section>
 
-    .chat-icon {
-      font-size: 50px;
-      background-color: #1f2937;
-      padding: 20px;
-      border-radius: 50%;
-      margin-bottom: 20px;
-    }
+    <section class="prompt">
+      <form action="#" class="prompt__form" novalidate>
+        <div class="prompt__input-wrapper">
+          <input
+            type="text"
+            placeholder="Enter a prompt here"
+            class="prompt__form-input"
+            required
+          />
+          <button class="prompt__form-button" id="sendButton">
+            <i class="bx bx-send"></i>
+          </button>
+          <button class="prompt__form-button" id="deleteButton">
+            <i class="bx bx-trash"></i>
+          </button>
+        </div>
+      </form>
+      <p class="prompt__disclaim">
+        Kurdish GPT may display inaccurate info, including about people, so
+        please double-check its responses.
+      </p>
+    </section>
 
-    h1 {
-      font-size: 24px;
-      margin-bottom: 8px;
-    }
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8784624020948059"
+      crossorigin="anonymous"
+    ></script>
 
-    p {
-      color: #9ca3af;
-      max-width: 300px;
-      font-size: 14px;
-      margin-bottom: 25px;
-    }
-
-    .suggestion-btn {
-      border: 1px solid #1f2937;
-      background: transparent;
-      color: white;
-      border-radius: 8px;
-      padding: 10px 20px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    .suggestion-btn:hover {
-      background: #1f2937;
-    }
-
-    /* Chat messages */
-    .messages {
-      width: 100%;
-      max-width: 600px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      text-align: left;
-      margin-top: 20px;
-    }
-
-    .message {
-      background: #1f2937;
-      padding: 10px 15px;
-      border-radius: 10px;
-      width: fit-content;
-      max-width: 80%;
-      word-wrap: break-word;
-    }
-
-    .user {
-      align-self: flex-end;
-      background: #2563eb;
-    }
-
-    /* Footer input */
-    footer {
-      width: 100%;
-      padding: 15px;
-      border-top: 1px solid #1f2937;
-      background: #0d1117;
-      display: flex;
-      justify-content: center;
-    }
-
-    .input-box {
-      width: 95%;
-      max-width: 600px;
-      background: #1f2937;
-      border-radius: 12px;
-      padding: 10px;
-      display: flex;
-      align-items: center;
-    }
-
-    .input-box input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: white;
-      font-size: 14px;
-    }
-
-    .send-btn {
-      background: #2563eb;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 12px;
-      cursor: pointer;
-      color: white;
-      transition: 0.3s;
-    }
-
-    .send-btn:hover {
-      background: #3b82f6;
-    }
-  </style>
-</head>
-
-<body>
-  <header>
-    <button class="lang-btn active">English</button>
-    <button class="lang-btn">کوردی</button>
-  </header>
-
-  <div class="chat-container">
-    <div class="chat-icon"><i class="bx bx-chat"></i></div>
-    <h1>Welcome to AI Chat</h1>
-    <p>Start a conversation in English or Kurdish, use voice commands, or generate images</p>
-    <button class="suggestion-btn">Tell me about Kurdish culture</button>
-
-    <!-- Chat messages will appear here -->
-    <div class="messages" id="messages"></div>
-  </div>
-
-  <footer>
-    <div class="input-box">
-      <input id="userInput" type="text" placeholder="Type your message..." />
-      <button class="send-btn" id="sendBtn"><i class="bx bx-send"></i></button>
-    </div>
-  </footer>
-
-  <script>
-    const sendBtn = document.getElementById("sendBtn");
-    const userInput = document.getElementById("userInput");
-    const messagesDiv = document.getElementById("messages");
-
-    function addMessage(text, sender = "user") {
-      const msg = document.createElement("div");
-      msg.classList.add("message", sender);
-      msg.innerText = text;
-      messagesDiv.appendChild(msg);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    sendBtn.addEventListener("click", () => {
-      const text = userInput.value.trim();
-      if (!text) return;
-      addMessage(text, "user");
-      userInput.value = "";
-
-      // Optional: Simulated AI response
-      setTimeout(() => {
-        addMessage("🤖 I'm just a demo. But I heard: " + text, "bot");
-      }, 500);
-    });
-
-    // Press Enter to send
-    userInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendBtn.click();
-    });
-  </script>
-</body>
+    <script type="module" src="script.js"></script>
+  </body>
 </html>
