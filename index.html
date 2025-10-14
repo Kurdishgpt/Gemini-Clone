@@ -1,139 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta charset="UTF-8" />
     <meta
       name="description"
-      content="Explore the power of advanced AI with our Gemini clone! ✨ Get cutting-edge features and seamless interaction. Try it now! 🤖"
+      content="Start a conversation in English or Kurdish, use voice commands, or generate images."
     />
-    <meta
-      name="keywords"
-      content="Gemini clone, AI, artificial intelligence, chatbot, NLP, machine learning, innovative, technology, assistant, chat"
-    />
-    <meta name="author" content="Gouranga Das Samrat" />
-    <meta name="robots" content="index, follow" />
-    <meta name="language" content="en" />
-
-    <meta property="og:title" content="Your Gemini Clone Title Here 🚀" />
-    <meta
-      property="og:description"
-      content="Explore the power of advanced AI with our Gemini clone! ✨ Get cutting-edge features and seamless interaction. Try it now! 🤖"
-    />
-    <meta
-      property="og:image"
-      content="URL_TO_YOUR_WEBSITE_LOGO_OR_A_REPRESENTATIVE_SCREENSHOT"
-    />
-    <meta
-      property="og:url"
-      content="https://geminiclonebygouranga.netlify.app/"
-    />
-    <meta property="og:type" content="website" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Your Gemini Clone Title Here 🚀" />
-    <meta
-      name="twitter:description"
-      content="Explore the power of advanced AI with our Gemini clone! ✨ Get cutting-edge features and seamless interaction. Try it now! 🤖"
-    />
-    <meta
-      name="twitter:image"
-      content="URL_TO_YOUR_WEBSITE_LOGO_OR_A_REPRESENTATIVE_SCREENSHOT"
-    />
-    <meta
-      name="twitter:url"
-      content="https://geminiclonebygouranga.netlify.app/"
-    />
-    <meta name="google-adsense-account" content="ca-pub-8784624020948059" />
-    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="assets/highlight-js/styles/github-dark.css" />
+    <title>AI Chat</title>
     <link href="assets/boxicons-2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css" />
     <link rel="shortcut icon" href="assets/gemini.svg" type="image/x-icon" />
-    <script src="assets/highlight-js/highlight.min.js"></script>
-    <script src="assets/marked/marked.min.js"></script>
-    <title>Google Gemini Clone</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #0d1117;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      /* Header with language buttons */
+      header {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 15px;
+        background: #0d1117;
+        border-bottom: 1px solid #1f2937;
+      }
+
+      .lang-btn {
+        background: none;
+        border: 1px solid #1f2937;
+        padding: 8px 20px;
+        border-radius: 8px;
+        color: #fff;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      .lang-btn.active {
+        background: #2563eb;
+        border-color: #2563eb;
+      }
+
+      /* Main welcome section */
+      main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .chat-icon {
+        font-size: 50px;
+        background-color: #1f2937;
+        padding: 20px;
+        border-radius: 50%;
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+
+      p {
+        color: #9ca3af;
+        max-width: 300px;
+        font-size: 14px;
+        margin-bottom: 25px;
+      }
+
+      .suggestion-btn {
+        border: 1px solid #1f2937;
+        background: transparent;
+        color: white;
+        border-radius: 8px;
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      .suggestion-btn:hover {
+        background: #1f2937;
+      }
+
+      /* Footer input */
+      footer {
+        width: 100%;
+        padding: 15px;
+        background: #0d1117;
+        border-top: 1px solid #1f2937;
+        display: flex;
+        justify-content: center;
+      }
+
+      .input-box {
+        width: 95%;
+        max-width: 600px;
+        background: #1f2937;
+        border-radius: 12px;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+      }
+
+      .input-box input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: white;
+        font-size: 14px;
+      }
+
+      .send-btn {
+        background: #2563eb;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 12px;
+        cursor: pointer;
+        color: white;
+      }
+
+      .send-btn:hover {
+        background: #3b82f6;
+      }
+    </style>
   </head>
 
   <body>
-    <nav class="navbar">
-      <h3 class="navbar__logo">Gemini</h3>
-      <button class="navbar__button" id="themeToggler">
-        <i class="bx bx-sun"></i>
-      </button>
-    </nav>
-
-    <header class="header">
-      <div class="header__title">
-        <h1>Hello, There!</h1>
-        <h2>How can I help you today?</h2>
-      </div>
-      <div class="suggests">
-        <div class="suggests__item">
-          <p class="suggests__item-text">
-            Give tips on helping kids finish their homework on time
-          </p>
-          <div class="suggests__item-icon">
-            <i class="bx bx-stopwatch"></i>
-          </div>
-        </div>
-        <div class="suggests__item">
-          <p class="suggests__item-text">
-            Help me write an out-of-office email
-          </p>
-          <div class="suggests__item-icon">
-            <i class="bx bx-edit-alt"></i>
-          </div>
-        </div>
-        <div class="suggests__item">
-          <p class="suggests__item-text">
-            Give me phrases to learn a new language
-          </p>
-          <div class="suggests__item-icon">
-            <i class="bx bx-compass"></i>
-          </div>
-        </div>
-        <div class="suggests__item">
-          <p class="suggests__item-text">
-            Show me how to build something by hand
-          </p>
-          <div class="suggests__item-icon">
-            <i class="bx bx-wrench"></i>
-          </div>
-        </div>
-      </div>
+    <header>
+      <button class="lang-btn active">English</button>
+      <button class="lang-btn">کوردی</button>
     </header>
 
-    <section class="chats"></section>
+    <main>
+      <div class="chat-icon"><i class="bx bx-chat"></i></div>
+      <h1>Welcome to AI Chat</h1>
+      <p>Start a conversation in English or Kurdish, use voice commands, or generate images</p>
+      <button class="suggestion-btn">Tell me about Kurdish culture</button>
+    </main>
 
-    <section class="prompt">
-      <form action="#" class="prompt__form" novalidate>
-        <div class="prompt__input-wrapper">
-          <input
-            type="text"
-            placeholder="Enter a prompt here"
-            class="prompt__form-input"
-            required
-          />
-          <button class="prompt__form-button" id="sendButton">
-            <i class="bx bx-send"></i>
-          </button>
-          <button class="prompt__form-button" id="deleteButton">
-            <i class="bx bx-trash"></i>
-          </button>
-        </div>
-      </form>
-      <p class="prompt__disclaim">
-        Gemini may display inaccurate info, including about people, so
-        double-check its responses.
-      </p>
-    </section>
-
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8784624020948059"
-      crossorigin="anonymous"
-    ></script>
-
-    <script type="module" src="script.js"></script>
+    <footer>
+      <div class="input-box">
+        <input type="text" placeholder="Type your message..." />
+        <button class="send-btn"><i class="bx bx-send"></i></button>
+      </div>
+    </footer>
   </body>
   </html>
