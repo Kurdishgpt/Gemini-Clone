@@ -1,166 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="description"
-      content="Start a conversation in English or Kurdish, use voice commands, or generate images."
-    />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Chat</title>
-    <link href="assets/boxicons-2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <link rel="shortcut icon" href="assets/gemini.svg" type="image/x-icon" />
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chat</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-      body {
-        font-family: "Poppins", sans-serif;
-        background-color: #0d1117;
-        color: #fff;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        justify-content: space-between;
-        align-items: center;
-      }
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #0d1117;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
 
-      /* Header with language buttons */
-      header {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
-        padding: 15px;
-        background: #0d1117;
-        border-bottom: 1px solid #1f2937;
-      }
+    /* Header with language buttons */
+    header {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 15px;
+      border-bottom: 1px solid #1f2937;
+      background: #0d1117;
+    }
 
-      .lang-btn {
-        background: none;
-        border: 1px solid #1f2937;
-        padding: 8px 20px;
-        border-radius: 8px;
-        color: #fff;
-        cursor: pointer;
-        transition: 0.3s;
-      }
+    .lang-btn {
+      background: none;
+      border: 1px solid #1f2937;
+      padding: 8px 20px;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s;
+    }
 
-      .lang-btn.active {
-        background: #2563eb;
-        border-color: #2563eb;
-      }
+    .lang-btn.active {
+      background: #2563eb;
+      border-color: #2563eb;
+    }
 
-      /* Main welcome section */
-      main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 20px;
-      }
+    /* Chat container */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
 
-      .chat-icon {
-        font-size: 50px;
-        background-color: #1f2937;
-        padding: 20px;
-        border-radius: 50%;
-        margin-bottom: 20px;
-      }
+    .chat-icon {
+      font-size: 50px;
+      background-color: #1f2937;
+      padding: 20px;
+      border-radius: 50%;
+      margin-bottom: 20px;
+    }
 
-      h1 {
-        font-size: 24px;
-        margin-bottom: 8px;
-      }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
 
-      p {
-        color: #9ca3af;
-        max-width: 300px;
-        font-size: 14px;
-        margin-bottom: 25px;
-      }
+    p {
+      color: #9ca3af;
+      max-width: 300px;
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
 
-      .suggestion-btn {
-        border: 1px solid #1f2937;
-        background: transparent;
-        color: white;
-        border-radius: 8px;
-        padding: 10px 20px;
-        cursor: pointer;
-        transition: 0.3s;
-      }
+    .suggestion-btn {
+      border: 1px solid #1f2937;
+      background: transparent;
+      color: white;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
 
-      .suggestion-btn:hover {
-        background: #1f2937;
-      }
+    .suggestion-btn:hover {
+      background: #1f2937;
+    }
 
-      /* Footer input */
-      footer {
-        width: 100%;
-        padding: 15px;
-        background: #0d1117;
-        border-top: 1px solid #1f2937;
-        display: flex;
-        justify-content: center;
-      }
+    /* Chat messages */
+    .messages {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
+      margin-top: 20px;
+    }
 
-      .input-box {
-        width: 95%;
-        max-width: 600px;
-        background: #1f2937;
-        border-radius: 12px;
-        padding: 10px;
-        display: flex;
-        align-items: center;
-      }
+    .message {
+      background: #1f2937;
+      padding: 10px 15px;
+      border-radius: 10px;
+      width: fit-content;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
 
-      .input-box input {
-        flex: 1;
-        background: transparent;
-        border: none;
-        outline: none;
-        color: white;
-        font-size: 14px;
-      }
+    .user {
+      align-self: flex-end;
+      background: #2563eb;
+    }
 
-      .send-btn {
-        background: #2563eb;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 12px;
-        cursor: pointer;
-        color: white;
-      }
+    /* Footer input */
+    footer {
+      width: 100%;
+      padding: 15px;
+      border-top: 1px solid #1f2937;
+      background: #0d1117;
+      display: flex;
+      justify-content: center;
+    }
 
-      .send-btn:hover {
-        background: #3b82f6;
-      }
-    </style>
-  </head>
+    .input-box {
+      width: 95%;
+      max-width: 600px;
+      background: #1f2937;
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+    }
 
-  <body>
-    <header>
-      <button class="lang-btn active">English</button>
-      <button class="lang-btn">کوردی</button>
-    </header>
+    .input-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: white;
+      font-size: 14px;
+    }
 
-    <main>
-      <div class="chat-icon"><i class="bx bx-chat"></i></div>
-      <h1>Welcome to AI Chat</h1>
-      <p>Start a conversation in English or Kurdish, use voice commands, or generate images</p>
-      <button class="suggestion-btn">Tell me about Kurdish culture</button>
-    </main>
+    .send-btn {
+      background: #2563eb;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      color: white;
+      transition: 0.3s;
+    }
 
-    <footer>
-      <div class="input-box">
-        <input type="text" placeholder="Type your message..." />
-        <button class="send-btn"><i class="bx bx-send"></i></button>
-      </div>
-    </footer>
-  </body>
-  </html>
+    .send-btn:hover {
+      background: #3b82f6;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <button class="lang-btn active">English</button>
+    <button class="lang-btn">کوردی</button>
+  </header>
+
+  <div class="chat-container">
+    <div class="chat-icon"><i class="bx bx-chat"></i></div>
+    <h1>Welcome to AI Chat</h1>
+    <p>Start a conversation in English or Kurdish, use voice commands, or generate images</p>
+    <button class="suggestion-btn">Tell me about Kurdish culture</button>
+
+    <!-- Chat messages will appear here -->
+    <div class="messages" id="messages"></div>
+  </div>
+
+  <footer>
+    <div class="input-box">
+      <input id="userInput" type="text" placeholder="Type your message..." />
+      <button class="send-btn" id="sendBtn"><i class="bx bx-send"></i></button>
+    </div>
+  </footer>
+
+  <script>
+    const sendBtn = document.getElementById("sendBtn");
+    const userInput = document.getElementById("userInput");
+    const messagesDiv = document.getElementById("messages");
+
+    function addMessage(text, sender = "user") {
+      const msg = document.createElement("div");
+      msg.classList.add("message", sender);
+      msg.innerText = text;
+      messagesDiv.appendChild(msg);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click", () => {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(text, "user");
+      userInput.value = "";
+
+      // Optional: Simulated AI response
+      setTimeout(() => {
+        addMessage("🤖 I'm just a demo. But I heard: " + text, "bot");
+      }, 500);
+    });
+
+    // Press Enter to send
+    userInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendBtn.click();
+    });
+  </script>
+</body>
+</html>
