@@ -1,7 +1,7 @@
-// --- CONFIG IMPORT (optional external config.js) ---
+// --- Optional: import config if you have config.js ---
 import { CONFIG } from "./config.js";
 
-// --- DOM ELEMENTS ---
+// --- DOM Elements ---
 const englishBtn = document.querySelector(".lang-buttons button:first-child");
 const kurdishBtn = document.querySelector(".lang-buttons button:last-child");
 const sidebar = document.getElementById("sidebar");
@@ -15,7 +15,7 @@ const inputField = document.querySelector(".input-area input");
 const chatArea = document.querySelector("main");
 const uploadBtn = document.querySelector(".mic-btn");
 
-// ---------- SIDEBAR ----------
+// ========== SIDEBAR ==========
 clipboardBtn?.addEventListener("click", () => {
   sidebar?.classList.add("active");
 });
@@ -23,8 +23,10 @@ closeSidebarBtn?.addEventListener("click", () => {
   sidebar?.classList.remove("active");
 });
 
-// ---------- HOME BUTTON ----------
-homeBtn?.addEventListener("click", () => {
+// ========== HOME BUTTON ==========
+homeBtn?.addEventListener("click", showHomeScreen);
+
+function showHomeScreen() {
   chatArea.innerHTML = `
     <div class="chat-icon">
       <svg viewBox="0 0 24 24" width="48" height="48">
@@ -35,23 +37,24 @@ homeBtn?.addEventListener("click", () => {
     <p>Start a conversation in English or Kurdish, or upload images to enhance them.</p>
     <button class="example-btn">💬 Tell me about Kurdish culture</button>
   `;
-});
+}
 
-// ---------- THEME TOGGLE ----------
+// ========== THEME TOGGLE ==========
 themeBtn?.addEventListener("click", () => {
   document.body.classList.toggle("light");
   themeBtn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
 });
 
-// ---------- SPEAKER ----------
+// ========== SPEAKER ==========
 speakerBtn?.addEventListener("click", () => {
   const lastMessage = document.querySelector(".ai-response:last-child");
   if (!lastMessage) return;
-  const utterance = new SpeechSynthesisUtterance(lastMessage.textContent);
+  const text = lastMessage.textContent;
+  const utterance = new SpeechSynthesisUtterance(text);
   speechSynthesis.speak(utterance);
 });
 
-// ---------- LANGUAGE SWITCH ----------
+// ========== LANGUAGE SWITCH ==========
 englishBtn?.addEventListener("click", () => {
   englishBtn.classList.add("active");
   kurdishBtn.classList.remove("active");
@@ -65,47 +68,50 @@ kurdishBtn?.addEventListener("click", () => {
 });
 
 function updateLanguage(lang) {
-  const title = document.querySelector("h1");
-  const desc = document.querySelector("p");
-  if (!title || !desc) return;
-
+  const h1 = document.querySelector("h1");
+  const p = document.querySelector("p");
+  if (!h1 || !p) return;
   if (lang === "en") {
-    title.textContent = "Welcome to Kurdish GPT";
-    desc.textContent = "Start a conversation in English or Kurdish, or upload images to enhance them.";
+    h1.textContent = "Welcome to Kurdish GPT";
+    p.textContent = "Start a conversation in English or Kurdish, or upload images to enhance them.";
   } else {
-    title.textContent = "بەخێربێیت بۆ کوردیش GPT";
-    desc.textContent = "گفتوگۆ بکە بە ئینگلیزی یان کوردی، یان وێنە باربکە بۆ چاککردن.";
+    h1.textContent = "بەخێربێیت بۆ کوردیش GPT";
+    p.textContent = "گفتوگۆ بکە بە ئینگلیزی یان کوردی، یان وێنە باربکە بۆ چاککردن.";
   }
 }
 
-// ---------- SEND MESSAGE ----------
+// ========== SEND MESSAGE ==========
 sendBtn?.addEventListener("click", async () => {
-  const userMessage = inputField.value.trim();
-  if (!userMessage) return;
-  appendMessage("user", userMessage);
+  const message = inputField.value.trim();
+  if (!message) return;
+  appendMessage("user", message);
   inputField.value = "";
 
-  appendMessage("thinking", "🤔 Thinking...");
+  // thinking animation
+  const thinkingDiv = appendMessage("thinking", "🤔 Thinking...");
+  await fakeThinking();
+  thinkingDiv.remove();
 
-  // Simulate AI response (replace with API if needed)
-  setTimeout(() => {
-    document.querySelector(".thinking")?.remove();
-    appendMessage("ai", `🧠 Kurdish GPT says: "${userMessage}" is an interesting question!`);
-  }, 1500);
+  // AI response simulation
+  appendMessage("ai", `🧠 Kurdish GPT: "${message}" is an interesting thought!`);
 });
 
-// ---------- APPEND MESSAGES ----------
-function appendMessage(sender, text) {
-  const message = document.createElement("div");
-  message.classList.add(sender === "ai" ? "ai-response" : sender);
-  message.textContent = text;
-  chatArea.appendChild(message);
+function appendMessage(type, text) {
+  const div = document.createElement("div");
+  div.classList.add(type === "ai" ? "ai-response" : type);
+  div.textContent = text;
+  chatArea.appendChild(div);
   chatArea.scrollTop = chatArea.scrollHeight;
+  return div;
 }
 
-// ---------- UPLOAD IMAGE (Replace mic with Upload) ----------
+function fakeThinking() {
+  return new Promise((resolve) => setTimeout(resolve, 1500));
+}
+
+// ========== UPLOAD IMAGE BUTTON ==========
 uploadBtn.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 5v14m-7-7h14"/></svg>`;
-uploadBtn.title = "Upload image";
+uploadBtn.title = "Upload Image";
 
 uploadBtn.addEventListener("click", () => {
   const input = document.createElement("input");
@@ -115,11 +121,14 @@ uploadBtn.addEventListener("click", () => {
     const file = e.target.files[0];
     if (!file) return;
     appendMessage("user", `📤 Uploaded: ${file.name}`);
-    appendMessage("thinking", "🪄 Enhancing image...");
+    const thinkingDiv = appendMessage("thinking", "🪄 Enhancing image...");
     setTimeout(() => {
-      document.querySelector(".thinking")?.remove();
+      thinkingDiv.remove();
       appendMessage("ai", "✨ Image enhanced beautifully!");
     }, 2000);
   };
   input.click();
 });
+
+// ========== INITIAL HOME SCREEN ==========
+showHomeScreen();
