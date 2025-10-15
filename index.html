@@ -1,139 +1,118 @@
-<!DOCTYPE html>
-<html lang="ckb">
-  <head>
-    <meta
-      name="description"
-      content="بەهێزترین زانستی دەستکردی ئای‌ئای تاقی بکەرەوە لەگەڵ کوردیش جێ‌پیتی! ✨ ئاستی بەرزەی ئاگاداریی کوردی و تایبەتمەندییەکانی ئای‌ئای تاقی بکە."
-    />
-    <meta
-      name="keywords"
-      content="کوردیش جێ‌پیتی, ئای‌ئای, چاتبۆت, زانستی دەستکرد, زمانێکی کوردی, وەک ئاسیسەنت, تەکنەلۆژیا, گفتووگۆ"
-    />
-    <meta name="author" content="گۆرانگا داس سامرات" />
-    <meta name="robots" content="index, follow" />
-    <meta name="language" content="ckb" />
+<!doctype html>
 
-    <meta property="og:title" content="کوردیش جێ‌پیتی 🚀" />
-    <meta
-      property="og:description"
-      content="بەهێزترین زانستی دەستکردی ئای‌ئای تاقی بکەرەوە لەگەڵ کوردیش جێ‌پیتی! ✨ چات بکە، فێربە و دروست بکە بەهوشیاری زیاتر. 🤖"
-    />
-    <meta
-      property="og:image"
-      content="URL_TO_YOUR_WEBSITE_LOGO_OR_A_REPRESENTATIVE_SCREENSHOT"
-    />
-    <meta
-      property="og:url"
-      content="https://kurdishgpt.netlify.app/"
-    />
-    <meta property="og:type" content="website" />
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Chat — Mockup</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1724; /* dark navy */
+      --panel:#0b1220;
+      --muted:#9aa6bb;
+      --accent:#2b6df6;
+      --card:#0d1726;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:#fff}/* center mobile frame for preview */
+.frame{max-width:420px;margin:18px auto;border-radius:18px;overflow:hidden;box-shadow:0 20px 40px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="کوردیش جێ‌پیتی 🚀" />
-    <meta
-      name="twitter:description"
-      content="بەهێزترین زانستی دەستکردی ئای‌ئای تاقی بکەرەوە لەگەڵ کوردیش جێ‌پیتی! ✨ چات بکە، فێربە و دروست بکە بەهوشیاری زیاتر. 🤖"
-    />
-    <meta
-      name="twitter:image"
-      content="URL_TO_YOUR_WEBSITE_LOGO_OR_A_REPRESENTATIVE_SCREENSHOT"
-    />
-    <meta
-      name="twitter:url"
-      content="https://kurdishgpt.netlify.app/"
-    />
-    <meta name="google-adsense-account" content="ca-pub-8784624020948059" />
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="assets/highlight-js/styles/github-dark.css" />
-    <link href="assets/boxicons-2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css" />
-    <link rel="shortcut icon" href="assets/kurdish-gpt.svg" type="image/x-icon" />
-    <script src="assets/highlight-js/highlight.min.js"></script>
-    <script src="assets/marked/marked.min.js"></script>
-    <title>کوردیش جێ‌پیتی</title>
-  </head>
+.app{min-height:780px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));padding:18px 14px;box-sizing:border-box;display:flex;flex-direction:column}
 
-  <body>
-    <nav class="navbar">
-      <h3 class="navbar__logo">کوردیش جێ‌پیتی</h3>
-      <button class="navbar__button" id="themeToggler">
-        <i class="bx bx-sun"></i>
-      </button>
-    </nav>
+/* top toolbar */
+.top{display:flex;align-items:center;justify-content:space-between;padding:6px 4px}
+.left-icons, .right-icons{display:flex;gap:10px;align-items:center}
 
-    <header class="header">
-      <div class="header__title">
-        <h1>سلاو! 👋</h1>
-        <h2>کوردیش جێ‌پیتی چۆن دەتوانێت یارمەتیت بدات ئەمڕۆ؟</h2>
-      </div>
-      <div class="suggests">
-        <div class="suggests__item">
-          <p class="suggests__item-text">
-            ڕاوێژ بدە بۆ یارمەتیدانی منداڵان بۆ تەواوکردنی کارەکانیان بە کاتی خۆیان
-          </p>
-          <div class="suggests__item-icon">
-            <i class="bx bx-stopwatch"></i>
-          </div>
+.icon-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted)}
+
+/* language toggle */
+.lang-toggle{display:flex;gap:6px;background:rgba(255,255,255,0.02);padding:6px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.lang-btn{padding:8px 14px;border-radius:10px;font-weight:600;color:var(--muted);background:transparent;border:none;cursor:pointer}
+.lang-btn.active{background:linear-gradient(180deg,var(--accent),#1e58d1);color:#fff;box-shadow:0 6px 18px rgba(43,109,246,0.18)}
+
+/* center content */
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}
+.bubble{width:84px;height:84px;border-radius:999px;background:linear-gradient(180deg, rgba(43,109,246,0.14), rgba(43,109,246,0.06));display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+.bubble svg{width:36px;height:36px;opacity:0.95}
+
+h1{font-size:28px;margin:0 0 10px 0}
+p.sub{color:var(--muted);max-width:320px;margin:0 0 20px;font-size:15px;line-height:1.45}
+
+.cta{border:1px solid rgba(255,255,255,0.04);padding:12px 16px;border-radius:10px;display:inline-flex;align-items:center;gap:10px;color:var(--muted);cursor:pointer;background:transparent}
+
+/* bottom input */
+.bottom{padding:18px 6px 22px;display:flex;align-items:center;gap:8px}
+.input{flex:1;background:transparent;border:1px solid rgba(255,255,255,0.05);padding:14px;border-radius:10px;color:#fff;font-size:16px}
+.bottom .mic{width:40px;height:40px;border-radius:10px;background:transparent;border:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.send{width:44px;height:44px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;border:none}
+
+/* small responsive tweaks */
+@media (max-width:420px){.frame{margin:6px;border-radius:14px}}
+
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="app"><div class="top">
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="left-icons">
+        <div class="icon-btn" title="menu">
+          <!-- small hamburger -->
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="2" rx="1" fill="currentColor" /><rect y="5" width="12" height="2" rx="1" fill="currentColor" /><rect y="10" width="8" height="2" rx="1" fill="currentColor" /></svg>
         </div>
-        <div class="suggests__item">
-          <p class="suggests__item-text">
-            یارمەتی بدە بۆ نووسینی ئیمەیڵی دەرەوەی کار
-          </p>
-          <div class="suggests__item-icon">
-            <i class="bx bx-edit-alt"></i>
-          </div>
-        </div>
-        <div class="suggests__item">
-          <p class="suggests__item-text">
-            وتە پێم بڵێ بۆ فێربوونی زمانێکی نوێ
-          </p>
-          <div class="suggests__item-icon">
-            <i class="bx bx-compass"></i>
-          </div>
-        </div>
-        <div class="suggests__item">
-          <p class="suggests__item-text">
-            پیشانم بدە چۆن شتێک بە دەست دروست بکەم
-          </p>
-          <div class="suggests__item-icon">
-            <i class="bx bx-wrench"></i>
-          </div>
+        <div class="icon-btn" title="home">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 11.5L12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V11.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
       </div>
-    </header>
 
-    <section class="chats"></section>
+      <div style="margin-left:8px" class="lang-toggle" role="tablist">
+        <button class="lang-btn active" id="englishBtn">English</button>
+        <button class="lang-btn" id="kurdishBtn">کوردی</button>
+      </div>
+    </div>
 
-    <section class="prompt">
-      <form action="#" class="prompt__form" novalidate>
-        <div class="prompt__input-wrapper">
-          <input
-            type="text"
-            placeholder="لێرە پرسیارەکەت بنووسە"
-            class="prompt__form-input"
-            required
-          />
-          <button class="prompt__form-button" id="sendButton">
-            <i class="bx bx-send"></i>
-          </button>
-          <button class="prompt__form-button" id="deleteButton">
-            <i class="bx bx-trash"></i>
-          </button>
-        </div>
-      </form>
-      <p class="prompt__disclaim">
-        کوردیش جێ‌پیتی ڕەنگە زانیاریە نادروستەکان پیشان بدات، بە تایبەتی سەبارەت بە خەڵک، تکایە وەڵامەکان دووبارە پشکنینەوە.
-      </p>
-    </section>
+    <div class="right-icons">
+      <div class="icon-btn" title="sound">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="icon-btn" title="brightness">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.2"/></svg>
+      </div>
+    </div>
+  </div>
 
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8784624020948059"
-      crossorigin="anonymous"
-    ></script>
+  <div class="center">
+    <div class="bubble">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 11.5A8.5 8.5 0 1 1 6.5 3" stroke="#2b6df6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 12h8" stroke="#2b6df6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
 
-    <script type="module" src="script.js"></script>
-  </body>
-  </html>
-  
+    <h1>Welcome to AI Chat</h1>
+    <p class="sub">Start a conversation in English or Kurdish, use voice commands, or generate images</p>
+
+    <div class="cta" role="button" aria-label="Tell me about Kurdish culture">
+      <svg width="16" height="16" viewBox="0 0 24 24" style="opacity:0.9" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H8l-5 3V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <span>Tell me about Kurdish culture</span>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <input class="input" placeholder="Type your message..." aria-label="Type your message" />
+    <div class="mic" title="mute/unmute">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 9v6a3 3 0 0 0 6 0v-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 11v1a7 7 0 0 1-14 0v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <button class="send" title="send">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 2L11 13" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 2L15 22l-4-9-9-4 20-7z" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+</div>
+
+  </div>  <script>
+    // language toggle behavior (visual only)
+    const en = document.getElementById('englishBtn');
+    const ku = document.getElementById('kurdishBtn');
+    en.addEventListener('click',()=>{en.classList.add('active');ku.classList.remove('active');});
+    ku.addEventListener('click',()=>{ku.classList.add('active');en.classList.remove('active');});
+  </script></body>
+                                                                                                                                                                                                                                                                                                               </html>
