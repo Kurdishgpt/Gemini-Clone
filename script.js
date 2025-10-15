@@ -1,150 +1,98 @@
-import config from "./config.js";
+// script.js
 
-const englishBtn = document.querySelector('.lang-buttons button:first-child');
-const kurdishBtn = document.querySelector('.lang-buttons button:last-child');
-const themeIcon = document.querySelector('.top-right .icon:last-child');
-const title = document.querySelector('h1');
-const subtitle = document.querySelector('main p');
-const cultureBtn = document.querySelector('.btn');
-const body = document.body;
-const micIcon = document.querySelector('.mic');
-const inputField = document.querySelector('.chat-input input');
-const sendIcon = document.querySelector('.send');
-const chatContainer = document.querySelector('.chat-messages');
+// ----- LOAD CONFIG -----
+if (typeof CONFIG !== "undefined") {
+  console.log(`✅ ${CONFIG.appName} v${CONFIG.version} loaded`);
+} else {
+  console.error("❌ Config not found!");
+}
 
-let recognizing = false;
-let recognition;
-let isLight = false;
-let language = "en";
+// ----- LANGUAGE TOGGLE -----
+const langButtons = document.querySelectorAll(".lang-buttons button");
 
-// === Language toggle ===
-englishBtn.addEventListener('click', () => {
-  englishBtn.classList.add('active');
-  kurdishBtn.classList.remove('active');
-  language = "en";
+langButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    langButtons.forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
 
-  title.textContent = 'Welcome to AI Chat';
-  subtitle.textContent = 'Start a conversation in English or Kurdish, use voice commands, or generate images';
-  cultureBtn.textContent = '💬 Tell me about Kurdish culture';
-});
-
-kurdishBtn.addEventListener('click', () => {
-  kurdishBtn.classList.add('active');
-  englishBtn.classList.remove('active');
-  language = "ckb";
-
-  title.textContent = 'بەخێربێیت بۆ چاتی AI';
-  subtitle.textContent = 'گفتوگۆیەک دەست پێبکە بە ئینگلیزی یان کوردی، بە دەنگ قسە بکە یان وێنە دروست بکە';
-  cultureBtn.textContent = '💬 پێم بڵێ دەربارەی کەلتوری کوردی';
-});
-
-// === Theme toggle ===
-themeIcon.addEventListener('click', () => {
-  isLight = !isLight;
-  if (isLight) {
-    body.style.backgroundColor = '#f9fafb';
-    body.style.color = '#111';
-    themeIcon.textContent = '🌙';
-  } else {
-    body.style.backgroundColor = '#0d1117';
-    body.style.color = '#fff';
-    themeIcon.textContent = '☀️';
-  }
-});
-
-// === Optional click sound ===
-document.querySelectorAll('.icon, .btn').forEach((el) => {
-  el.addEventListener('click', () => {
-    const audio = new Audio('https://assets.mixkit.co/sfx/download/mixkit-select-click-1109.wav');
-    audio.volume = 0.3;
-    audio.play();
+    console.log(`🌐 Language changed to: ${btn.textContent}`);
   });
 });
 
-// === Speech recognition ===
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = false;
-  recognition.lang = 'en-US';
+// ----- DARK / LIGHT MODE -----
+const themeIcon = document.querySelector(".top-right .icon:last-child");
+let darkMode = CONFIG.darkMode;
 
-  recognition.onstart = () => {
-    recognizing = true;
-    micIcon.classList.add('recording');
-    micIcon.textContent = '🎙️';
-  };
-
-  recognition.onend = () => {
-    recognizing = false;
-    micIcon.classList.remove('recording');
-    micIcon.textContent = '🎤';
-  };
-
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    inputField.value = transcript;
-  };
-}
-
-micIcon.addEventListener('click', () => {
-  if (!recognition) {
-    alert('Speech recognition not supported in this browser.');
-    return;
-  }
-
-  if (recognizing) {
-    recognition.stop();
+function updateTheme() {
+  if (darkMode) {
+    document.body.style.backgroundColor = "#0d1117";
+    document.body.style.color = "#fff";
+    themeIcon.textContent = "☀️";
   } else {
-    recognition.lang = language === "en" ? "en-US" : "ckb-IQ";
-    recognition.start();
+    document.body.style.backgroundColor = "#f4f4f4";
+    document.body.style.color = "#000";
+    themeIcon.textContent = "🌙";
   }
+}
+
+themeIcon.addEventListener("click", () => {
+  darkMode = !darkMode;
+  updateTheme();
+  console.log(`🎨 Theme changed: ${darkMode ? "Dark" : "Light"}`);
 });
 
-// === Send message ===
-sendIcon.addEventListener('click', sendMessage);
-inputField.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendMessage();
+updateTheme(); // Apply default
+
+// ----- SOUND ICON -----
+const soundIcon = document.querySelector(".top-right .icon:first-child");
+let soundOn = true;
+
+soundIcon.addEventListener("click", () => {
+  soundOn = !soundOn;
+  soundIcon.textContent = soundOn ? "🔊" : "🔇";
+  console.log(`🔈 Sound ${soundOn ? "On" : "Off"}`);
 });
 
-async function sendMessage() {
-  const userMessage = inputField.value.trim();
-  if (!userMessage) return;
+// ----- MIC BUTTON -----
+const micBtn = document.querySelector(".mic-btn svg");
+let listening = false;
 
-  displayMessage(userMessage, "user");
+document.querySelector(".mic-btn").addEventListener("click", () => {
+  listening = !listening;
+  micBtn.style.stroke = listening ? "#2563eb" : "#9ca3af";
+  console.log(`🎤 Mic ${listening ? "On (listening...)" : "Off"}`);
+});
+
+// ----- SEND MESSAGE -----
+const sendBtn = document.querySelector(".send-btn");
+const inputField = document.querySelector(".input-area input");
+
+sendBtn.addEventListener("click", sendMessage);
+inputField.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+
+function sendMessage() {
+  const message = inputField.value.trim();
+  if (!message) return;
+
+  console.log(`💬 You: ${message}`);
   inputField.value = "";
-
-  const loadingMessage = displayMessage("Typing...", "ai", true);
-  try {
-    const res = await fetch(
-      `${config.API_BASE_URL}/models/${config.MODEL_NAME}:generateContent?key=${config.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: userMessage }] }]
-        }),
-      }
-    );
-
-    const data = await res.json();
-    const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
-    loadingMessage.remove();
-    displayMessage(aiText, "ai");
-  } catch (err) {
-    console.error(err);
-    loadingMessage.remove();
-    displayMessage("Error connecting to Gemini API.", "ai");
-  }
 }
 
-// === Display chat message ===
-function displayMessage(text, sender, isLoading = false) {
-  const msg = document.createElement("div");
-  msg.classList.add("message", sender === "user" ? "outgoing" : "incoming");
-  msg.textContent = text;
-  if (isLoading) msg.classList.add("loading");
-  chatContainer.appendChild(msg);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-  return msg;
-}
+// ----- MAIN BUTTON -----
+const mainButton = document.querySelector(".btn");
+
+mainButton.addEventListener("click", () => {
+  console.log("🧠 Button clicked: Tell me about Kurdish culture");
+  alert("Feature coming soon: AI will tell you about Kurdish culture!");
+});
+
+// ----- HOME + MENU ICONS -----
+const topLeftIcons = document.querySelectorAll(".top-left .icon");
+topLeftIcons[0].addEventListener("click", () => {
+  console.log("📋 Menu button clicked");
+});
+topLeftIcons[1].addEventListener("click", () => {
+  console.log("🏠 Home button clicked");
+});
