@@ -9,96 +9,94 @@ const main = document.querySelector("main");
 const micBtn = document.querySelector(".mic-btn");
 const body = document.body;
 
-// ---------- LANGUAGE SUPPORT ----------
+// ---------- LANGUAGE ----------
 let currentLang = "en";
 
 const translations = {
   en: {
     title: "Welcome to AI Chat",
-    description: "Start a conversation in English or Kurdish, use voice commands, or generate images",
-    buttonText: "💬 Tell me about Kurdish culture",
-    placeholder: "Type your message..."
+    description: "Start a conversation in English or Kurdish, upload images, or use AI tools below.",
+    placeholder: "Type your message...",
+    buttons: [
+      { icon: "🖼️", text: "Create Image", action: "createImage" },
+      { icon: "🧾", text: "Summarize Text", action: "summarizeText" },
+      { icon: "👁️", text: "Analyze Images", action: "analyzeImage" },
+      { icon: "⚙️", text: "More", action: "moreOptions" }
+    ]
   },
   ku: {
     title: "بەخێربێیت بۆ چاتی AI",
-    description: "گفتوگۆیەک دەستپێبکە بە ئینگلیزی یان کوردی، بەدەنگ قسە بکە یان وێنە دروست بکە",
-    buttonText: "💬 پێم بڵێ سەبارەت بە کەلتووری کوردی",
-    placeholder: "پەیامەکت بنووسە..."
+    description: "گفتوگۆیەک دەستپێبکە بە ئینگلیزی یان کوردی، وێنە بەرز بکە یان ئەم ئامرازانە بەکاربەرە:",
+    placeholder: "پەیامەکت بنووسە...",
+    buttons: [
+      { icon: "🖼️", text: "دروستکردنی وێنە", action: "createImage" },
+      { icon: "🧾", text: "پوختەکردنی دەق", action: "summarizeText" },
+      { icon: "👁️", text: "شیکردنەوەی وێنە", action: "analyzeImage" },
+      { icon: "⚙️", text: "زیاتر", action: "moreOptions" }
+    ]
   }
 };
 
+// ---------- UI BUILD ----------
+function renderWelcome() {
+  const t = translations[currentLang];
+  main.innerHTML = `
+    <h1>${t.title}</h1>
+    <p>${t.description}</p>
+    <div class="feature-buttons"></div>
+  `;
+  const featureContainer = main.querySelector(".feature-buttons");
+  t.buttons.forEach(btn => {
+    const b = document.createElement("button");
+    b.className = "feature-btn";
+    b.textContent = `${btn.icon} ${btn.text}`;
+    b.dataset.action = btn.action;
+    featureContainer.appendChild(b);
+  });
+}
+
+// ---------- STYLES ----------
+const style = document.createElement("style");
+style.textContent = `
+.feature-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+}
+.feature-btn {
+  border: 1px solid #333;
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 20px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 14px;
+}
+.feature-btn:hover {
+  background: #3b82f6;
+  color: white;
+}
+`;
+document.head.appendChild(style);
+
+// ---------- LANGUAGE SWITCH ----------
 function updateLanguage(lang) {
   currentLang = lang;
-  const t = translations[lang];
-  document.querySelector("h1").textContent = t.title;
-  document.querySelector("p").textContent = t.description;
-  document.querySelector(".btn").textContent = t.buttonText;
-  input.placeholder = t.placeholder;
-
   englishBtn.classList.toggle("active", lang === "en");
   kurdishBtn.classList.toggle("active", lang === "ku");
+  renderWelcome();
 }
 
 englishBtn.addEventListener("click", () => updateLanguage("en"));
 kurdishBtn.addEventListener("click", () => updateLanguage("ku"));
 
-// ---------- SIDEBAR ----------
-const sidebar = document.createElement("div");
-sidebar.className = "sidebar";
-sidebar.innerHTML = `
-  <h2>AI Chat</h2>
-  <ul>
-    <li>🌟 New Chat</li>
-    <li>💾 Saved Chats</li>
-    <li>⚙️ Settings</li>
-    <li>🌙 Toggle Theme</li>
-    <li>🌐 Change Language</li>
-  </ul>
-`;
-document.body.appendChild(sidebar);
+// ---------- INITIAL LOAD ----------
+renderWelcome();
 
-const menuBtn = document.querySelector(".top-left .icon:first-child");
-menuBtn.addEventListener("click", () => {
-  sidebar.classList.toggle("open");
-});
-
-// ---------- SIDEBAR STYLE ----------
-const style = document.createElement("style");
-style.textContent = `
-.sidebar {
-  position: fixed;
-  top: 0; left: -260px;
-  width: 240px;
-  height: 100%;
-  background-color: #0f172a;
-  color: #fff;
-  padding: 20px;
-  transition: left 0.3s ease;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.4);
-  z-index: 1000;
-}
-.sidebar.open {
-  left: 0;
-}
-.sidebar h2 {
-  color: #3b82f6;
-  margin-bottom: 20px;
-}
-.sidebar ul {
-  list-style: none;
-}
-.sidebar li {
-  margin: 15px 0;
-  cursor: pointer;
-  font-size: 16px;
-}
-.sidebar li:hover {
-  color: #3b82f6;
-}
-`;
-document.head.appendChild(style);
-
-// ---------- CHAT MESSAGES ----------
+// ---------- CHAT ----------
 function addMessage(role, text) {
   const msg = document.createElement("div");
   msg.className = `msg ${role}`;
@@ -110,72 +108,80 @@ function addMessage(role, text) {
   main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
 }
 
-// ---------- SEND MESSAGE ----------
-sendBtn.addEventListener("click", async () => {
-  const text = input.value.trim();
-  if (!text) return;
-  addMessage("user", text);
-  input.value = "";
-
-  const aiReply = await sendToGemini(text);
-  addMessage("bot", aiReply);
+// ---------- FEATURE BUTTON ACTIONS ----------
+main.addEventListener("click", (e) => {
+  if (e.target.classList.contains("feature-btn")) {
+    const action = e.target.dataset.action;
+    handleFeature(action);
+  }
 });
 
-// ---------- GEMINI TEXT API ----------
-async function sendToGemini(userText) {
+function handleFeature(action) {
+  if (action === "createImage") {
+    addMessage("bot", "🖼️ Type a description and I’ll create an image for you.");
+  } else if (action === "summarizeText") {
+    addMessage("bot", "🧾 Paste text and I’ll summarize it.");
+  } else if (action === "analyzeImage") {
+    addMessage("bot", "👁️ Upload an image and I’ll analyze it.");
+  } else if (action === "moreOptions") {
+    addMessage("bot", "⚙️ More features coming soon...");
+  }
+}
+
+// ---------- GEMINI ----------
+async function sendToGemini(prompt) {
   try {
-    const response = await fetch(
+    const res = await fetch(
       `${config.API_BASE_URL}/models/${config.MODEL_NAME}:generateContent?key=${config.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `${userText} (${currentLang})` }] }],
+          contents: [{ parts: [{ text: `${prompt} (${currentLang})` }] }],
         }),
       }
     );
-
-    const data = await response.json();
-    const aiText =
+    const data = await res.json();
+    return (
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "⚠️ No response received.";
-    return aiText;
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "⚠️ Error connecting to AI.";
+      "⚠️ No response from Gemini"
+    );
+  } catch (err) {
+    console.error(err);
+    return "⚠️ Error contacting Gemini API.";
   }
 }
 
-// ---------- IMAGE UPLOAD FEATURE ----------
+// ---------- INPUT SEND ----------
+sendBtn.addEventListener("click", async () => {
+  const text = input.value.trim();
+  if (!text) return;
+  addMessage("user", text);
+  input.value = "";
+  const reply = await sendToGemini(text);
+  addMessage("bot", reply);
+  lastBotMessage = reply;
+});
+
+// ---------- IMAGE UPLOAD ----------
 const fileInput = document.createElement("input");
 fileInput.type = "file";
 fileInput.accept = "image/*";
 fileInput.style.display = "none";
 document.body.appendChild(fileInput);
 
-// Change mic icon to 📷
 micBtn.textContent = "📷";
-
-micBtn.addEventListener("click", () => {
-  fileInput.click();
-});
+micBtn.addEventListener("click", () => fileInput.click());
 
 fileInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  const imgURL = URL.createObjectURL(file);
-  const imgPreview = document.createElement("img");
-  imgPreview.src = imgURL;
-  imgPreview.style.maxWidth = "180px";
-  imgPreview.style.borderRadius = "10px";
-  imgPreview.style.margin = "8px";
-  addMessage("user", "🖼️ Uploaded an image:");
-  main.appendChild(imgPreview);
-
   const base64 = await fileToBase64(file);
-  const aiReply = await sendImageToGemini(base64);
-  addMessage("bot", aiReply);
+  addMessage("user", "🖼️ Image uploaded");
+  const reply = await sendImageToGemini(base64);
+  addMessage("bot", reply);
+  lastBotMessage = reply;
 });
 
 async function fileToBase64(file) {
@@ -183,37 +189,42 @@ async function fileToBase64(file) {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = (error) => reject(error);
+    reader.onerror = reject;
   });
 }
 
-async function sendImageToGemini(base64Image) {
-  try {
-    const response = await fetch(
-      `${config.API_BASE_URL}/models/gemini-1.5-flash:generateContent?key=${config.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: `Describe this image in ${currentLang === "ku" ? "Kurdish" : "English"}:` },
-                { inline_data: { mime_type: "image/jpeg", data: base64Image } },
-              ],
-            },
-          ],
-        }),
-      }
-    );
-
-    const data = await response.json();
-    const aiText =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "⚠️ No description received.";
-    return aiText;
-  } catch (error) {
-    console.error("Gemini Image API Error:", error);
-    return "⚠️ Error analyzing image.";
-  }
+async function sendImageToGemini(base64) {
+  const res = await fetch(
+    `${config.API_BASE_URL}/models/gemini-1.5-flash:generateContent?key=${config.GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: `Describe this image in ${currentLang === "ku" ? "Kurdish" : "English"}:` },
+              { inline_data: { mime_type: "image/jpeg", data: base64 } },
+            ],
+          },
+        ],
+      }),
+    }
+  );
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No description.";
 }
+
+// ---------- SPEAKER ----------
+let lastBotMessage = "";
+const speakerBtn = document.createElement("button");
+speakerBtn.textContent = "🔊";
+speakerBtn.className = "speaker-btn";
+document.body.appendChild(speakerBtn);
+
+speakerBtn.addEventListener("click", () => {
+  if (!lastBotMessage) return;
+  const utter = new SpeechSynthesisUtterance(lastBotMessage);
+  utter.lang = currentLang === "ku" ? "ckb" : "en-US";
+  speechSynthesis.speak(utter);
+});
