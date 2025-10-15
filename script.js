@@ -1,7 +1,7 @@
-
+// --- CONFIG IMPORT (optional external config.js) ---
 import { CONFIG } from "./config.js";
 
-// --- DOM Elements ---
+// --- DOM ELEMENTS ---
 const englishBtn = document.querySelector(".lang-buttons button:first-child");
 const kurdishBtn = document.querySelector(".lang-buttons button:last-child");
 const sidebar = document.getElementById("sidebar");
@@ -13,12 +13,12 @@ const themeBtn = document.querySelector(".top-right .icon:last-child");
 const sendBtn = document.querySelector(".send-btn");
 const inputField = document.querySelector(".input-area input");
 const chatArea = document.querySelector("main");
+const uploadBtn = document.querySelector(".mic-btn");
 
-// ---------- SIDEBAR CONTROL ----------
+// ---------- SIDEBAR ----------
 clipboardBtn?.addEventListener("click", () => {
   sidebar?.classList.add("active");
 });
-
 closeSidebarBtn?.addEventListener("click", () => {
   sidebar?.classList.remove("active");
 });
@@ -27,10 +27,13 @@ closeSidebarBtn?.addEventListener("click", () => {
 homeBtn?.addEventListener("click", () => {
   chatArea.innerHTML = `
     <div class="chat-icon">
-      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <svg viewBox="0 0 24 24" width="48" height="48">
+        <path fill="currentColor" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
     </div>
     <h1>Welcome to Kurdish GPT</h1>
     <p>Start a conversation in English or Kurdish, or upload images to enhance them.</p>
+    <button class="example-btn">💬 Tell me about Kurdish culture</button>
   `;
 });
 
@@ -40,12 +43,11 @@ themeBtn?.addEventListener("click", () => {
   themeBtn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
 });
 
-// ---------- SPEAKER BUTTON ----------
+// ---------- SPEAKER ----------
 speakerBtn?.addEventListener("click", () => {
   const lastMessage = document.querySelector(".ai-response:last-child");
   if (!lastMessage) return;
-  const text = lastMessage.textContent;
-  const utterance = new SpeechSynthesisUtterance(text);
+  const utterance = new SpeechSynthesisUtterance(lastMessage.textContent);
   speechSynthesis.speak(utterance);
 });
 
@@ -63,14 +65,16 @@ kurdishBtn?.addEventListener("click", () => {
 });
 
 function updateLanguage(lang) {
+  const title = document.querySelector("h1");
+  const desc = document.querySelector("p");
+  if (!title || !desc) return;
+
   if (lang === "en") {
-    document.querySelector("h1").textContent = "Welcome to Kurdish GPT";
-    document.querySelector("p").textContent =
-      "Start a conversation in English or Kurdish, or upload images to enhance them.";
+    title.textContent = "Welcome to Kurdish GPT";
+    desc.textContent = "Start a conversation in English or Kurdish, or upload images to enhance them.";
   } else {
-    document.querySelector("h1").textContent = "بەخێربێیت بۆ کوردیش GPT";
-    document.querySelector("p").textContent =
-      "گفتوگۆ بکە بە ئینگلیزی یان کوردی، یان وێنە باربکە بۆ چاککردن.";
+    title.textContent = "بەخێربێیت بۆ کوردیش GPT";
+    desc.textContent = "گفتوگۆ بکە بە ئینگلیزی یان کوردی، یان وێنە باربکە بۆ چاککردن.";
   }
 }
 
@@ -78,15 +82,16 @@ function updateLanguage(lang) {
 sendBtn?.addEventListener("click", async () => {
   const userMessage = inputField.value.trim();
   if (!userMessage) return;
-
   appendMessage("user", userMessage);
   inputField.value = "";
 
   appendMessage("thinking", "🤔 Thinking...");
 
-  const aiText = await sendMessageToGemini(userMessage);
-  document.querySelector(".thinking")?.remove();
-  appendMessage("ai", aiText);
+  // Simulate AI response (replace with API if needed)
+  setTimeout(() => {
+    document.querySelector(".thinking")?.remove();
+    appendMessage("ai", `🧠 Kurdish GPT says: "${userMessage}" is an interesting question!`);
+  }, 1500);
 });
 
 // ---------- APPEND MESSAGES ----------
@@ -98,48 +103,23 @@ function appendMessage(sender, text) {
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-// ---------- SEND TO GEMINI ----------
-async function sendMessageToGemini(prompt) {
-  try {
-    const res = await fetch(
-      `${CONFIG.API_BASE_URL}/models/${CONFIG.MODEL_NAME}:generateContent?key=${CONFIG.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        }),
-      }
-    );
+// ---------- UPLOAD IMAGE (Replace mic with Upload) ----------
+uploadBtn.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 5v14m-7-7h14"/></svg>`;
+uploadBtn.title = "Upload image";
 
-    const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response from AI.";
-  } catch (err) {
-    console.error(err);
-    return "❌ Error connecting to Gemini AI.";
-  }
-}
-
-// ---------- UPLOAD IMAGE (Replace mic button with upload) ----------
-const uploadBtn = document.querySelector(".mic-btn");
-uploadBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>`;
-uploadBtn.addEventListener("click", handleImageUpload);
-
-async function handleImageUpload() {
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = "image/*";
-  fileInput.onchange = async (e) => {
+uploadBtn.addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.onchange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    appendMessage("user", `📤 Uploaded image: ${file.name}`);
-    appendMessage("thinking", "🧠 Enhancing image...");
-
-    // Simulate edit process (replace with real API if desired)
+    appendMessage("user", `📤 Uploaded: ${file.name}`);
+    appendMessage("thinking", "🪄 Enhancing image...");
     setTimeout(() => {
       document.querySelector(".thinking")?.remove();
       appendMessage("ai", "✨ Image enhanced beautifully!");
     }, 2000);
   };
-  fileInput.click();
-}
+  input.click();
+});
