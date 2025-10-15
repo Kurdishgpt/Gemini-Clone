@@ -1,141 +1,128 @@
 import config from "./config.js";
 
-// Select UI elements
-const langButtons = document.querySelectorAll(".lang-buttons button");
-const englishBtn = langButtons[0];
-const kurdishBtn = langButtons[1];
+// ---------- ELEMENTS ----------
+const englishBtn = document.querySelector(".lang-buttons button:nth-child(1)");
+const kurdishBtn = document.querySelector(".lang-buttons button:nth-child(2)");
 const sendBtn = document.querySelector(".send-btn");
-const micBtn = document.querySelector(".mic-btn");
 const input = document.querySelector(".input-area input");
 const main = document.querySelector("main");
-const topBar = document.querySelector(".top-bar");
-const themeToggle = topBar.querySelector(".icon:last-child");
-const menuBtn = topBar.querySelector(".icon:first-child");
+const micBtn = document.querySelector(".mic-btn");
+const body = document.body;
 
-// ---------- SIDEBAR SETUP ----------
+// ---------- LANGUAGE SUPPORT ----------
+let currentLang = "en";
+
+const translations = {
+  en: {
+    title: "Welcome to AI Chat",
+    description: "Start a conversation in English or Kurdish, use voice commands, or generate images",
+    buttonText: "💬 Tell me about Kurdish culture",
+    placeholder: "Type your message..."
+  },
+  ku: {
+    title: "بەخێربێیت بۆ چاتی AI",
+    description: "گفتوگۆیەک دەستپێبکە بە ئینگلیزی یان کوردی، بەدەنگ قسە بکە یان وێنە دروست بکە",
+    buttonText: "💬 پێم بڵێ سەبارەت بە کەلتووری کوردی",
+    placeholder: "پەیامەکت بنووسە..."
+  }
+};
+
+function updateLanguage(lang) {
+  currentLang = lang;
+  const t = translations[lang];
+  document.querySelector("h1").textContent = t.title;
+  document.querySelector("p").textContent = t.description;
+  document.querySelector(".btn").textContent = t.buttonText;
+  input.placeholder = t.placeholder;
+
+  englishBtn.classList.toggle("active", lang === "en");
+  kurdishBtn.classList.toggle("active", lang === "ku");
+}
+
+englishBtn.addEventListener("click", () => updateLanguage("en"));
+kurdishBtn.addEventListener("click", () => updateLanguage("ku"));
+
+// ---------- SIDEBAR ----------
 const sidebar = document.createElement("div");
-sidebar.classList.add("sidebar");
+sidebar.className = "sidebar";
 sidebar.innerHTML = `
-  <div class="sidebar-content">
-    <h2>AI Chat</h2>
-    <button class="side-btn new-chat">🌟 New Chat</button>
-    <button class="side-btn saved-chats">💾 Saved Chats</button>
-    <button class="side-btn settings">⚙️ Settings</button>
-    <button class="side-btn theme-toggle">🌙 Toggle Theme</button>
-    <button class="side-btn lang-toggle">🌐 Change Language</button>
-  </div>
+  <h2>AI Chat</h2>
+  <ul>
+    <li>🌟 New Chat</li>
+    <li>💾 Saved Chats</li>
+    <li>⚙️ Settings</li>
+    <li>🌙 Toggle Theme</li>
+    <li>🌐 Change Language</li>
+  </ul>
 `;
 document.body.appendChild(sidebar);
 
-// Overlay
-const overlay = document.createElement("div");
-overlay.classList.add("overlay");
-document.body.appendChild(overlay);
+const menuBtn = document.querySelector(".top-left .icon:first-child");
+menuBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("open");
+});
 
-// ---------- SIDEBAR STYLES ----------
+// ---------- SIDEBAR STYLE ----------
 const style = document.createElement("style");
 style.textContent = `
 .sidebar {
   position: fixed;
-  top: 0;
-  left: -260px;
+  top: 0; left: -260px;
   width: 240px;
   height: 100%;
-  background-color: #11161d;
-  border-right: 1px solid #222;
+  background-color: #0f172a;
+  color: #fff;
   padding: 20px;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.4);
   transition: left 0.3s ease;
-  z-index: 1001;
-}
-.sidebar.open { left: 0; }
-.sidebar h2 {
-  color: #2563eb;
-  margin-bottom: 16px;
-  font-size: 1.2rem;
-}
-.side-btn {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 10px;
-  background: none;
-  border: none;
-  color: #ccc;
-  font-size: 0.95rem;
-  border-radius: 6px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.side-btn:hover { background-color: #1f2937; color: #fff; }
-.overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.4);
-  opacity: 0; visibility: hidden;
-  transition: opacity 0.3s ease;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.4);
   z-index: 1000;
 }
-.overlay.show { opacity: 1; visibility: visible; }
-.message {
-  max-width: 90%;
-  word-wrap: break-word;
+.sidebar.open {
+  left: 0;
+}
+.sidebar h2 {
+  color: #3b82f6;
+  margin-bottom: 20px;
+}
+.sidebar ul {
+  list-style: none;
+}
+.sidebar li {
+  margin: 15px 0;
+  cursor: pointer;
+  font-size: 16px;
+}
+.sidebar li:hover {
+  color: #3b82f6;
 }
 `;
 document.head.appendChild(style);
 
-// ---------- SIDEBAR LOGIC ----------
-menuBtn.addEventListener("click", () => {
-  sidebar.classList.toggle("open");
-  overlay.classList.toggle("show");
-});
-overlay.addEventListener("click", () => {
-  sidebar.classList.remove("open");
-  overlay.classList.remove("show");
-});
-
-// ---------- THEME TOGGLE ----------
-let darkMode = true;
-function toggleTheme() {
-  darkMode = !darkMode;
-  document.body.style.backgroundColor = darkMode ? "#0d1117" : "#f8fafc";
-  document.body.style.color = darkMode ? "#fff" : "#111";
+// ---------- CHAT MESSAGES ----------
+function addMessage(role, text) {
+  const msg = document.createElement("div");
+  msg.className = `msg ${role}`;
+  msg.textContent = text;
+  msg.style.margin = "8px";
+  msg.style.textAlign = role === "user" ? "right" : "left";
+  msg.style.color = role === "user" ? "#60a5fa" : "#ccc";
+  main.appendChild(msg);
+  main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
 }
-themeToggle.addEventListener("click", toggleTheme);
-sidebar.querySelector(".theme-toggle").addEventListener("click", toggleTheme);
 
-// ---------- LANGUAGE SWITCH ----------
-let currentLang = "en";
-function updateLanguage(lang) {
-  currentLang = lang;
-  if (lang === "ku") {
-    englishBtn.classList.remove("active");
-    kurdishBtn.classList.add("active");
-    document.querySelector("h1").textContent = "بەخێربێیت بۆ چاتێکی AI";
-    document.querySelector("p").textContent =
-      "دەست بکە بە گفتوگۆکردن بە ئینگلیزی یان کوردی، بەکاربهێنە ئەمرە دەنگی، یان وێنە دروست بکە.";
-    document.querySelector(".btn").textContent = "💬 پێم بڵێ دەربارەی کلتوری کوردی";
-    input.placeholder = "نامەکەت بنووسە...";
-  } else {
-    kurdishBtn.classList.remove("active");
-    englishBtn.classList.add("active");
-    document.querySelector("h1").textContent = "Welcome to AI Chat";
-    document.querySelector("p").textContent =
-      "Start a conversation in English or Kurdish, use voice commands, or generate images";
-    document.querySelector(".btn").textContent = "💬 Tell me about Kurdish culture";
-    input.placeholder = "Type your message...";
-  }
-}
-englishBtn.addEventListener("click", () => updateLanguage("en"));
-kurdishBtn.addEventListener("click", () => updateLanguage("ku"));
-sidebar.querySelector(".lang-toggle").addEventListener("click", () => {
-  updateLanguage(currentLang === "en" ? "ku" : "en");
+// ---------- SEND MESSAGE ----------
+sendBtn.addEventListener("click", async () => {
+  const text = input.value.trim();
+  if (!text) return;
+  addMessage("user", text);
+  input.value = "";
+
+  const aiReply = await sendToGemini(text);
+  addMessage("bot", aiReply);
 });
 
-// ---------- GEMINI AI CHAT ----------
-async function sendToGemini(message) {
+// ---------- GEMINI TEXT API ----------
+async function sendToGemini(userText) {
   try {
     const response = await fetch(
       `${config.API_BASE_URL}/models/${config.MODEL_NAME}:generateContent?key=${config.GEMINI_API_KEY}`,
@@ -143,7 +130,7 @@ async function sendToGemini(message) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: message }] }],
+          contents: [{ parts: [{ text: `${userText} (${currentLang})` }] }],
         }),
       }
     );
@@ -151,77 +138,82 @@ async function sendToGemini(message) {
     const data = await response.json();
     const aiText =
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "⚠️ No response from Gemini.";
+      "⚠️ No response received.";
     return aiText;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "⚠️ Error connecting to Gemini API.";
+    return "⚠️ Error connecting to AI.";
   }
 }
 
-// ---------- MESSAGE HANDLING ----------
-sendBtn.addEventListener("click", async () => {
-  const userMsg = input.value.trim();
-  if (!userMsg) return;
-  addMessage("user", userMsg);
-  input.value = "";
-  const aiReply = await sendToGemini(userMsg);
+// ---------- IMAGE UPLOAD FEATURE ----------
+const fileInput = document.createElement("input");
+fileInput.type = "file";
+fileInput.accept = "image/*";
+fileInput.style.display = "none";
+document.body.appendChild(fileInput);
+
+// Change mic icon to 📷
+micBtn.textContent = "📷";
+
+micBtn.addEventListener("click", () => {
+  fileInput.click();
+});
+
+fileInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const imgURL = URL.createObjectURL(file);
+  const imgPreview = document.createElement("img");
+  imgPreview.src = imgURL;
+  imgPreview.style.maxWidth = "180px";
+  imgPreview.style.borderRadius = "10px";
+  imgPreview.style.margin = "8px";
+  addMessage("user", "🖼️ Uploaded an image:");
+  main.appendChild(imgPreview);
+
+  const base64 = await fileToBase64(file);
+  const aiReply = await sendImageToGemini(base64);
   addMessage("bot", aiReply);
 });
 
-input.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendBtn.click();
-});
-
-function addMessage(sender, text) {
-  const msgDiv = document.createElement("div");
-  msgDiv.classList.add("message", sender);
-  msgDiv.innerHTML = sender === "user" ? `🙂 ${text}` : `🤖 ${text}`;
-  msgDiv.style.padding = "10px 14px";
-  msgDiv.style.margin = "8px";
-  msgDiv.style.borderRadius = "8px";
-  msgDiv.style.backgroundColor = sender === "user" ? "#1f2937" : "#172030";
-  msgDiv.style.alignSelf = sender === "user" ? "flex-end" : "flex-start";
-  main.appendChild(msgDiv);
-  main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
-  saveChatToLocalStorage(sender, text);
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = (error) => reject(error);
+  });
 }
 
-// ---------- SAVE CHAT LOCALLY ----------
-function saveChatToLocalStorage(sender, text) {
-  const chats = JSON.parse(localStorage.getItem("aiChats") || "[]");
-  chats.push({ sender, text });
-  localStorage.setItem("aiChats", JSON.stringify(chats));
-}
+async function sendImageToGemini(base64Image) {
+  try {
+    const response = await fetch(
+      `${config.API_BASE_URL}/models/gemini-1.5-flash:generateContent?key=${config.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: `Describe this image in ${currentLang === "ku" ? "Kurdish" : "English"}:` },
+                { inline_data: { mime_type: "image/jpeg", data: base64Image } },
+              ],
+            },
+          ],
+        }),
+      }
+    );
 
-function loadSavedChats() {
-  main.innerHTML = "<h2>💾 Saved Chats</h2>";
-  const chats = JSON.parse(localStorage.getItem("aiChats") || "[]");
-  if (chats.length === 0) {
-    main.innerHTML += "<p>No saved chats yet.</p>";
-    return;
+    const data = await response.json();
+    const aiText =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "⚠️ No description received.";
+    return aiText;
+  } catch (error) {
+    console.error("Gemini Image API Error:", error);
+    return "⚠️ Error analyzing image.";
   }
-  chats.forEach((msg) => addMessage(msg.sender, msg.text));
 }
-
-// ---------- SIDEBAR BUTTON ACTIONS ----------
-sidebar.querySelector(".new-chat").addEventListener("click", () => {
-  main.innerHTML = "";
-  addMessage("bot", "🆕 New chat started!");
-  sidebar.classList.remove("open");
-  overlay.classList.remove("show");
-});
-
-sidebar.querySelector(".saved-chats").addEventListener("click", () => {
-  loadSavedChats();
-  sidebar.classList.remove("open");
-  overlay.classList.remove("show");
-});
-
-sidebar.querySelector(".settings").addEventListener("click", () => {
-  alert("⚙️ Settings feature coming soon!");
-});
-
-micBtn.addEventListener("click", () => {
-  alert("🎤 Voice input coming soon!");
-});
