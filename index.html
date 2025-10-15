@@ -1,19 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>AI Chat - Kurdish & English Voice Assistant</title>
-    <meta name="description" content="Advanced AI chatbot with Kurdish Central language support, voice interaction, and image generation capabilities. Chat in Kurdish and English with real-time responses." />
-    <meta property="og:title" content="AI Chat - Kurdish & English Voice Assistant" />
-    <meta property="og:description" content="AI-powered chatbot supporting Kurdish Central language with voice features and image generation" />
-    <meta property="og:type" content="website" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat</title>
+  <style>
+    /* ---------- RESET ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: #0d1117;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ---------- TOP BAR ---------- */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background-color: #0d1117;
+      border-bottom: 1px solid #222;
+    }
+
+    .top-left, .top-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon {
+      font-size: 20px;
+      color: #ccc;
+      cursor: pointer;
+    }
+
+    /* ---------- LANGUAGE BUTTONS ---------- */
+    .lang-buttons {
+      display: flex;
+      background-color: #11161d;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .lang-buttons button {
+      padding: 6px 18px;
+      border: none;
+      background: none;
+      color: #ccc;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .lang-buttons .active {
+      background-color: #2563eb;
+      color: #fff;
+    }
+
+    /* ---------- MAIN SECTION ---------- */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+    }
+
+    .chat-icon {
+      background-color: #172030;
+      padding: 16px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .chat-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: #2563eb;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    p {
+      color: #9ca3af;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      max-width: 300px;
+    }
+
+    .btn {
+      background-color: transparent;
+      color: #fff;
+      border: 1px solid #2f3541;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      border-color: #2563eb;
+    }
+
+    /* ---------- INPUT AREA ---------- */
+    .input-area {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-top: 1px solid #222;
+      background-color: #0d1117;
+      gap: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      background: none;
+      border: 1px solid #2f3541;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .input-area input::placeholder {
+      color: #7d8695;
+    }
+
+    .input-icons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .send-btn, .mic-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .send-btn svg, .mic-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: #2563eb;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .mic-btn svg {
+      stroke: #9ca3af;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-left">
+      <span class="icon">📋</span>
+      <span class="icon">🏠</span>
+    </div>
+
+    <div class="lang-buttons">
+      <button class="active">English</button>
+      <button>کوردی</button>
+    </div>
+
+    <div class="top-right">
+      <span class="icon">🔊</span>
+      <span class="icon">☀️</span>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main>
+    <div class="chat-icon">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <h1>Welcome to AI Chat</h1>
+    <p>Start a conversation in English or Kurdish, use voice commands, or generate images</p>
+    <button class="btn">💬 Tell me about Kurdish culture</button>
+  </main>
+
+  <!-- INPUT AREA -->
+  <div class="input-area">
+    <input type="text" placeholder="Type your message...">
+    <div class="input-icons">
+      <button class="mic-btn">
+        <svg viewBox="0 0 24 24"><path d="M12 1v10m0 4v7m5-7a5 5 0 0 1-10 0"/></svg>
+      </button>
+      <button class="send-btn">
+        <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+      </button>
+    </div>
+  </div>
+
+</body>
+        </html>
