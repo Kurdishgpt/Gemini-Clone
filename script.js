@@ -1,26 +1,156 @@
-// script.js for AI Chat mockup
+import config from "./config.js";
 
-// Language toggle buttons const englishBtn = document.getElementById('englishBtn'); const kurdishBtn = document.getElementById('kurdishBtn');
+const messageForm = document.querySelector(".prompt__form");
+const chatHistoryContainer = document.querySelector(".chats");
+const themeToggleButton = document.getElementById("themeToggler");
+const clearChatButton = document.getElementById("deleteButton");
 
-if (englishBtn && kurdishBtn) { englishBtn.addEventListener('click', () => { englishBtn.classList.add('active'); kurdishBtn.classList.remove('active'); setLanguage('en'); });
+// ========== State ==========
+let currentUserMessage = null;
+let isGeneratingResponse = false;
 
-kurdishBtn.addEventListener('click', () => { kurdishBtn.classList.add('active'); englishBtn.classList.remove('active'); setLanguage('ku'); }); }
+// ========== Initialize Highlight.js ==========
+hljs.configure({
+  languages: ["javascript", "python", "bash", "html", "css", "json"]
+});
+hljs.highlightAll();
 
-// Handle send button click const sendBtn = document.querySelector('.send'); const input = document.querySelector('.input');
+// ========== API URL ==========
+const API_REQUEST_URL = `${config.API_BASE_URL}/models/${config.MODEL_NAME}:generateContent?key=${config.GEMINI_API_KEY}`;
 
-if (sendBtn && input) { sendBtn.addEventListener('click', sendMessage); input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); }); }
+// ========== Load saved chat history ==========
+const loadSavedChatHistory = () => {
+  const savedChats = JSON.parse(localStorage.getItem("saved-chats")) || [];
+  const isLightTheme = localStorage.getItem("themeColor") === "light_mode";
 
-function sendMessage() { const message = input.value.trim(); if (!message) return; console.log(User message: ${message}); input.value = ''; // Here you can add code to send to AI API or display on screen }
+  document.body.classList.toggle("light_mode", isLightTheme);
+  themeToggleButton.innerHTML = isLightTheme
+    ? '<i class="bx bx-moon"></i>'
+    : '<i class="bx bx-sun"></i>';
 
-// Microphone button toggle const micBtn = document.querySelector('.mic'); let micActive = false;
+  chatHistoryContainer.innerHTML = "";
 
-if (micBtn) { micBtn.addEventListener('click', () => { micActive = !micActive; micBtn.style.color = micActive ? '#2b6df6' : '#9aa6bb'; console.log(micActive ? 'Microphone activated' : 'Microphone muted'); }); }
+  savedChats.forEach(({ userMessage, botResponse }) => {
+    appendMessage(userMessage, "outgoing");
+    appendMessage(botResponse, "incoming", true);
+  });
+};
 
-// Light/Dark toggle simulation (optional) const brightnessBtn = document.querySelector('[title="brightness"]'); let darkMode = true;
+// ========== Create message element ==========
+const createMessageElement = (text, type) => {
+  const message = document.createElement("div");
+  message.classList.add("message", `message--${type}`);
 
-if (brightnessBtn) { brightnessBtn.addEventListener('click', () => { darkMode = !darkMode; document.body.style.background = darkMode ? '#0f1724' : '#f8f9fb'; document.body.style.color = darkMode ? '#fff' : '#111'; }); }
+  const avatar =
+    type === "outgoing" ? "assets/profile.png" : "assets/gemini.svg";
+  const content = `
+    <div class="message__content">
+      <img class="message__avatar" src="${avatar}" alt="${type} avatar" />
+      <p class="message__text"></p>
+    </div>
+  `;
+  message.innerHTML = content;
+  message.querySelector(".message__text").innerText = text;
+  return message;
+};
 
-// Example of switching language text (extend as needed) function setLanguage(lang) { const title = document.querySelector('h1'); const subtitle = document.querySelector('.sub'); const cta = document.querySelector('.cta span');
+// ========== Append message ==========
+const appendMessage = (text, type, skipEffect = false) => {
+  const msg = createMessageElement("", type);
+  chatHistoryContainer.appendChild(msg);
+  const textElement = msg.querySelector(".message__text");
 
-if (lang === 'ku') { title.textContent = 'بەخێربێیت بۆ گەپەکانی AI'; subtitle.textContent = 'گفتوگۆ بکە بە ئینگلیزی یان کوردی، بە دەنگ یان وێنە دروست بکە'; cta.textContent = 'پێم بڵێ دەربارەی کەلتوری کوردی'; } else { title.textContent = 'Welcome to AI Chat'; subtitle.textContent = 'Start a conversation in English or Kurdish, use voice commands, or generate images'; cta.textContent = 'Tell me about Kurdish culture'; } }
+  if (skipEffect) {
+    textElement.innerHTML = marked.parse(text);
+    hljs.highlightAll();
+  } else {
+    showTypingEffect(text, textElement);
+  }
 
+  chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+};
+
+// ========== Typing animation ==========
+const showTypingEffect = (text, element) => {
+  const words = text.split(" ");
+  let index = 0;
+  const interval = setInterval(() => {
+    element.textContent += (index === 0 ? "" : " ") + words[index++];
+    if (index >= words.length) clearInterval(interval);
+  }, 50);
+};
+
+// ========== Fetch Gemini API ==========
+const fetchGeminiResponse = async (userMessage) => {
+  try {
+    const res = await fetch(API_REQUEST_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: userMessage }] }]
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || "API error");
+
+    const responseText =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+    return responseText;
+  } catch (error) {
+    console.error("API Error:", error);
+    return "⚠️ Error: " + error.message;
+  }
+};
+
+// ========== Handle form submit ==========
+messageForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = messageForm.querySelector(".prompt__form-input");
+  const message = input.value.trim();
+  if (!message || isGeneratingResponse) return;
+
+  input.value = "";
+  appendMessage(message, "outgoing");
+  isGeneratingResponse = true;
+
+  // Show loading message
+  const loadingMsg = createMessageElement("Thinking...", "incoming");
+  chatHistoryContainer.appendChild(loadingMsg);
+  chatHistoryContainer.scrollTop = chatHistoryContainer.scrollHeight;
+
+  const botResponse = await fetchGeminiResponse(message);
+
+  loadingMsg.remove(); // Remove "Thinking..." message
+  appendMessage(botResponse, "incoming");
+  isGeneratingResponse = false;
+
+  saveChat(message, botResponse);
+});
+
+// ========== Save chat ==========
+const saveChat = (userMessage, botResponse) => {
+  const savedChats = JSON.parse(localStorage.getItem("saved-chats")) || [];
+  savedChats.push({ userMessage, botResponse });
+  localStorage.setItem("saved-chats", JSON.stringify(savedChats));
+};
+
+// ========== Theme toggle ==========
+themeToggleButton.addEventListener("click", () => {
+  const isLight = document.body.classList.toggle("light_mode");
+  localStorage.setItem("themeColor", isLight ? "light_mode" : "dark_mode");
+  themeToggleButton.innerHTML = isLight
+    ? '<i class="bx bx-moon"></i>'
+    : '<i class="bx bx-sun"></i>';
+});
+
+// ========== Clear chat ==========
+clearChatButton.addEventListener("click", () => {
+  if (confirm("Clear all chat history?")) {
+    localStorage.removeItem("saved-chats");
+    chatHistoryContainer.innerHTML = "";
+  }
+});
+
+// ========== Init ==========
+loadSavedChatHistory();
