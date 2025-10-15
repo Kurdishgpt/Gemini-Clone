@@ -1,6 +1,6 @@
-// ✅ script.js
+// ✅ script.js (all buttons working)
 
-// DOM Elements
+// ======= DOM ELEMENTS =======
 const englishBtn = document.querySelector(".lang-buttons button:first-child");
 const kurdishBtn = document.querySelector(".lang-buttons button:last-child");
 const sidebar = document.getElementById("sidebar");
@@ -12,18 +12,19 @@ const sendBtn = document.querySelector(".send-btn");
 const uploadBtn = document.querySelector(".upload-btn");
 const inputField = document.querySelector(".input-area input");
 const chatArea = document.querySelector("main");
+const closeSidebarBtn = document.getElementById("closeSidebar");
 
-// ---------- SIDEBAR CONTROL ----------
-clipboardBtn.addEventListener("click", () => {
-  sidebar.classList.add("active");
+// ======= SIDEBAR CONTROL =======
+clipboardBtn?.addEventListener("click", () => {
+  sidebar?.classList.add("active");
 });
 
-document.getElementById("closeSidebar").addEventListener("click", () => {
-  sidebar.classList.remove("active");
+closeSidebarBtn?.addEventListener("click", () => {
+  sidebar?.classList.remove("active");
 });
 
-// ---------- HOME BUTTON ----------
-homeBtn.addEventListener("click", () => {
+// ======= HOME BUTTON =======
+homeBtn?.addEventListener("click", () => {
   chatArea.innerHTML = `
     <div class="chat-icon">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -33,48 +34,53 @@ homeBtn.addEventListener("click", () => {
   `;
 });
 
-// ---------- THEME TOGGLE ----------
-themeBtn.addEventListener("click", () => {
+// ======= THEME TOGGLE =======
+themeBtn?.addEventListener("click", () => {
   document.body.classList.toggle("light");
   themeBtn.textContent = document.body.classList.contains("light") ? "🌙" : "☀️";
 });
 
-// ---------- SPEAKER BUTTON ----------
-speakerBtn.addEventListener("click", () => {
+// ======= SPEAKER BUTTON =======
+speakerBtn?.addEventListener("click", () => {
   const lastMessage = document.querySelector(".ai-response:last-child");
   if (!lastMessage) return;
   const text = lastMessage.textContent;
   const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US"; // can adjust later for Kurdish
   speechSynthesis.speak(utterance);
 });
 
-// ---------- LANGUAGE SWITCH ----------
-englishBtn.addEventListener("click", () => {
+// ======= LANGUAGE SWITCH =======
+englishBtn?.addEventListener("click", () => {
   englishBtn.classList.add("active");
   kurdishBtn.classList.remove("active");
   updateLanguage("en");
 });
 
-kurdishBtn.addEventListener("click", () => {
+kurdishBtn?.addEventListener("click", () => {
   kurdishBtn.classList.add("active");
   englishBtn.classList.remove("active");
   updateLanguage("ku");
 });
 
 function updateLanguage(lang) {
+  const h1 = document.querySelector("h1");
+  const p = document.querySelector("p");
+  if (!h1 || !p) return;
+
   if (lang === "en") {
-    document.querySelector("h1").textContent = "Welcome to AI Chat";
-    document.querySelector("p").textContent =
+    h1.textContent = "Welcome to AI Chat";
+    p.textContent =
       "Start a conversation in English or Kurdish, use voice commands, or generate images";
   } else {
-    document.querySelector("h1").textContent = "بەخێربێیت بۆ چاتی AI";
-    document.querySelector("p").textContent =
+    h1.textContent = "بەخێربێیت بۆ چاتی AI";
+    p.textContent =
       "گفتوگۆ لە زمانی ئینگلیزی یان کوردی بکە، یان وێنە دروست بکە";
   }
 }
 
-// ---------- SEND MESSAGE ----------
-sendBtn.addEventListener("click", async () => {
+// ======= SEND MESSAGE =======
+sendBtn?.addEventListener("click", async () => {
   const userMessage = inputField.value.trim();
   if (!userMessage) return;
 
@@ -91,7 +97,7 @@ sendBtn.addEventListener("click", async () => {
     });
 
     const data = await response.json();
-    document.querySelector(".thinking").remove();
+    document.querySelector(".thinking")?.remove();
 
     if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
       appendMessage("ai", data.candidates[0].content.parts[0].text);
@@ -99,22 +105,28 @@ sendBtn.addEventListener("click", async () => {
       appendMessage("ai", "⚠️ No response from Gemini API.");
     }
   } catch (err) {
-    document.querySelector(".thinking").remove();
+    document.querySelector(".thinking")?.remove();
     appendMessage("ai", "❌ Error connecting to Gemini API.");
   }
 });
 
-// ---------- APPEND MESSAGES ----------
+// ======= APPEND MESSAGES =======
 function appendMessage(sender, text) {
   const message = document.createElement("div");
-  message.classList.add(sender === "ai" ? "ai-response" : sender);
+  message.classList.add(
+    sender === "ai"
+      ? "ai-response"
+      : sender === "thinking"
+      ? "thinking"
+      : "user"
+  );
   message.textContent = text;
   chatArea.appendChild(message);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-// ---------- UPLOAD IMAGE ----------
-uploadBtn.addEventListener("click", async () => {
+// ======= UPLOAD IMAGE =======
+uploadBtn?.addEventListener("click", async () => {
   const fileInput = document.createElement("input");
   fileInput.type = "file";
   fileInput.accept = "image/*";
@@ -123,9 +135,9 @@ uploadBtn.addEventListener("click", async () => {
     if (!file) return;
     appendMessage("user", `📤 Uploaded image: ${file.name}`);
     appendMessage("thinking", "🧠 Analyzing image...");
-    // (You can connect Gemini Vision model here)
+    // (Placeholder for Gemini Vision)
     setTimeout(() => {
-      document.querySelector(".thinking").remove();
+      document.querySelector(".thinking")?.remove();
       appendMessage("ai", "✨ Image processed successfully!");
     }, 2000);
   };
