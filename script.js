@@ -18,9 +18,9 @@ sidebar.classList.add("sidebar");
 sidebar.innerHTML = `
   <div class="sidebar-content">
     <h2>AI Chat</h2>
-    <button class="side-btn">🌟 New Chat</button>
-    <button class="side-btn">💾 Saved Chats</button>
-    <button class="side-btn">⚙️ Settings</button>
+    <button class="side-btn new-chat">🌟 New Chat</button>
+    <button class="side-btn saved-chats">💾 Saved Chats</button>
+    <button class="side-btn settings">⚙️ Settings</button>
     <button class="side-btn theme-toggle">🌙 Toggle Theme</button>
     <button class="side-btn lang-toggle">🌐 Change Language</button>
   </div>
@@ -48,9 +48,7 @@ style.textContent = `
   transition: left 0.3s ease;
   z-index: 1001;
 }
-.sidebar.open {
-  left: 0;
-}
+.sidebar.open { left: 0; }
 .sidebar h2 {
   color: #2563eb;
   margin-bottom: 16px;
@@ -70,25 +68,20 @@ style.textContent = `
   cursor: pointer;
   transition: 0.2s;
 }
-.side-btn:hover {
-  background-color: #1f2937;
-  color: #fff;
-}
+.side-btn:hover { background-color: #1f2937; color: #fff; }
 .overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   background: rgba(0,0,0,0.4);
-  opacity: 0;
-  visibility: hidden;
+  opacity: 0; visibility: hidden;
   transition: opacity 0.3s ease;
   z-index: 1000;
 }
-.overlay.show {
-  opacity: 1;
-  visibility: visible;
+.overlay.show { opacity: 1; visibility: visible; }
+.message {
+  max-width: 90%;
+  word-wrap: break-word;
 }
 `;
 document.head.appendChild(style);
@@ -180,7 +173,6 @@ input.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendBtn.click();
 });
 
-// ---------- MESSAGE DISPLAY ----------
 function addMessage(sender, text) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("message", sender);
@@ -188,14 +180,48 @@ function addMessage(sender, text) {
   msgDiv.style.padding = "10px 14px";
   msgDiv.style.margin = "8px";
   msgDiv.style.borderRadius = "8px";
-  msgDiv.style.backgroundColor =
-    sender === "user" ? "#1f2937" : "#172030";
+  msgDiv.style.backgroundColor = sender === "user" ? "#1f2937" : "#172030";
   msgDiv.style.alignSelf = sender === "user" ? "flex-end" : "flex-start";
   main.appendChild(msgDiv);
   main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
+  saveChatToLocalStorage(sender, text);
 }
 
-// ---------- MIC PLACEHOLDER ----------
+// ---------- SAVE CHAT LOCALLY ----------
+function saveChatToLocalStorage(sender, text) {
+  const chats = JSON.parse(localStorage.getItem("aiChats") || "[]");
+  chats.push({ sender, text });
+  localStorage.setItem("aiChats", JSON.stringify(chats));
+}
+
+function loadSavedChats() {
+  main.innerHTML = "<h2>💾 Saved Chats</h2>";
+  const chats = JSON.parse(localStorage.getItem("aiChats") || "[]");
+  if (chats.length === 0) {
+    main.innerHTML += "<p>No saved chats yet.</p>";
+    return;
+  }
+  chats.forEach((msg) => addMessage(msg.sender, msg.text));
+}
+
+// ---------- SIDEBAR BUTTON ACTIONS ----------
+sidebar.querySelector(".new-chat").addEventListener("click", () => {
+  main.innerHTML = "";
+  addMessage("bot", "🆕 New chat started!");
+  sidebar.classList.remove("open");
+  overlay.classList.remove("show");
+});
+
+sidebar.querySelector(".saved-chats").addEventListener("click", () => {
+  loadSavedChats();
+  sidebar.classList.remove("open");
+  overlay.classList.remove("show");
+});
+
+sidebar.querySelector(".settings").addEventListener("click", () => {
+  alert("⚙️ Settings feature coming soon!");
+});
+
 micBtn.addEventListener("click", () => {
   alert("🎤 Voice input coming soon!");
 });
