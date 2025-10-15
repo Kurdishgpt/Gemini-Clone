@@ -1,6 +1,6 @@
 import config from "./config.js";
 
-// ----------------- ELEMENTS -----------------
+// ---------- ELEMENTS ----------
 const englishBtn = document.querySelector(".lang-buttons button:nth-child(1)");
 const kurdishBtn = document.querySelector(".lang-buttons button:nth-child(2)");
 const sendBtn = document.querySelector(".send-btn");
@@ -12,43 +12,66 @@ const speakerBtn = document.querySelector(".top-right .icon:nth-child(1)");
 const themeBtn = document.querySelector(".top-right .icon:nth-child(2)");
 const body = document.body;
 
-// ----------------- STATE -----------------
 let currentLang = "en";
 let isDarkMode = true;
 let lastBotMessage = "";
 let savedChats = JSON.parse(localStorage.getItem("savedChats") || "[]");
 
-// ----------------- TRANSLATIONS -----------------
+// ---------- STYLES ----------
+const style = document.createElement("style");
+style.textContent = `
+.message {
+  padding: 10px 14px;
+  border-radius: 14px;
+  margin: 8px;
+  max-width: 85%;
+  line-height: 1.5;
+  word-wrap: break-word;
+  animation: fadeIn 0.3s ease;
+}
+.message.user {
+  background: #2563eb;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.message.bot {
+  background: #1f2937;
+  color: #e5e7eb;
+  border-bottom-left-radius: 4px;
+}
+.thinking {
+  font-style: italic;
+  opacity: 0.7;
+  margin: 8px;
+  animation: blink 1.2s infinite ease-in-out;
+}
+@keyframes blink {
+  0%,100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+`;
+document.head.appendChild(style);
+
+// ---------- TRANSLATIONS ----------
 const translations = {
   en: {
     title: "Welcome to AI Chat",
-    description:
-      "Start a conversation in English or Kurdish, upload images, or use AI tools below.",
+    description: "Start a conversation, upload images, or use tools below.",
     placeholder: "Type your message...",
-    buttons: [
-      { icon: "🖼️", text: "Create Image", action: "createImage" },
-      { icon: "🧾", text: "Summarize Text", action: "summarizeText" },
-      { icon: "👁️", text: "Analyze Image", action: "analyzeImage" },
-      { icon: "⚙️", text: "More", action: "moreOptions" },
-    ],
-    sidebar: ["🌟 New Chat", "💾 Saved Chats", "⚙️ Settings", "🌙 Toggle Theme", "🌐 Change Language"]
   },
   ku: {
     title: "بەخێربێیت بۆ چاتی AI",
-    description:
-      "گفتوگۆیەک دەستپێبکە بە ئینگلیزی یان کوردی، وێنە بەرز بکە یان ئەم ئامرازانە بەکاربەرە:",
+    description: "گفتوگۆیەک دەستپێبکە، وێنە بەرز بکە یان ئامرازەکان بەکاربەرە.",
     placeholder: "پەیامەکت بنووسە...",
-    buttons: [
-      { icon: "🖼️", text: "دروستکردنی وێنە", action: "createImage" },
-      { icon: "🧾", text: "پوختەکردنی دەق", action: "summarizeText" },
-      { icon: "👁️", text: "شیکردنەوەی وێنە", action: "analyzeImage" },
-      { icon: "⚙️", text: "زیاتر", action: "moreOptions" },
-    ],
-    sidebar: ["🌟 گفتوگۆی نوێ", "💾 گفتوگۆی پارێزراو", "⚙️ ڕێکخستن", "🌙 گۆڕینی ڕووکار", "🌐 گۆڕینی زمان"]
   },
 };
 
-// ----------------- SIDEBAR -----------------
+// ---------- SIDEBAR ----------
 const sidebar = document.createElement("div");
 sidebar.className = "sidebar";
 document.body.appendChild(sidebar);
@@ -65,22 +88,21 @@ sidebarStyle.textContent = `
   transition: left 0.3s ease;
   padding: 20px;
   z-index: 9999;
+  box-shadow: 3px 0 10px rgba(0,0,0,0.3);
 }
 .sidebar.open { left: 0; }
 .sidebar h2 { color: #3b82f6; margin-bottom: 20px; }
 .sidebar ul { list-style: none; padding: 0; }
 .sidebar li { margin: 12px 0; cursor: pointer; }
-.sidebar li:hover { color: #3b82f6; }
+.sidebar li:hover { color: #3b82f6; transform: translateX(4px); transition: 0.2s; }
 `;
 document.head.appendChild(sidebarStyle);
 
 function renderSidebar() {
-  const t = translations[currentLang];
+  const items = ["🌟 New Chat", "💾 Saved Chats", "⚙️ Settings", "🌙 Toggle Theme", "🌐 Change Language"];
   sidebar.innerHTML = `
     <h2>AI Chat</h2>
-    <ul>
-      ${t.sidebar.map((item, i) => `<li data-action="${i}">${item}</li>`).join("")}
-    </ul>
+    <ul>${items.map((i, idx) => `<li data-action="${idx}">${i}</li>`).join("")}</ul>
   `;
 }
 renderSidebar();
@@ -91,52 +113,16 @@ homeBtn.addEventListener("click", () => {
 
 sidebar.addEventListener("click", (e) => {
   if (e.target.tagName !== "LI") return;
-  const action = e.target.dataset.action;
+  const idx = parseInt(e.target.dataset.action);
   sidebar.classList.remove("open");
-  handleSidebarAction(parseInt(action));
+  if (idx === 0) main.innerHTML = "";
+  if (idx === 1) showSavedChats();
+  if (idx === 2) addMessage("bot", "⚙️ Settings will be added soon.");
+  if (idx === 3) toggleTheme();
+  if (idx === 4) updateLanguage(currentLang === "en" ? "ku" : "en");
 });
 
-function handleSidebarAction(i) {
-  switch (i) {
-    case 0: // New Chat
-      main.innerHTML = "";
-      lastBotMessage = "";
-      addMessage("bot", "🆕 New chat started.");
-      break;
-    case 1: // Saved Chats
-      showSavedChats();
-      break;
-    case 2: // Settings
-      addMessage("bot", "⚙️ Settings are currently default.");
-      break;
-    case 3: // Toggle Theme
-      toggleTheme();
-      break;
-    case 4: // Change Language
-      updateLanguage(currentLang === "en" ? "ku" : "en");
-      break;
-  }
-}
-
-// ----------------- LANGUAGE -----------------
-function renderWelcome() {
-  const t = translations[currentLang];
-  main.innerHTML = `
-    <h1>${t.title}</h1>
-    <p>${t.description}</p>
-    <div class="feature-buttons"></div>
-  `;
-  const container = main.querySelector(".feature-buttons");
-  t.buttons.forEach((b) => {
-    const btn = document.createElement("button");
-    btn.className = "feature-btn";
-    btn.dataset.action = b.action;
-    btn.textContent = `${b.icon} ${b.text}`;
-    container.appendChild(btn);
-  });
-  renderSidebar();
-}
-
+// ---------- LANGUAGE ----------
 function updateLanguage(lang) {
   currentLang = lang;
   englishBtn.classList.toggle("active", lang === "en");
@@ -145,53 +131,49 @@ function updateLanguage(lang) {
 }
 englishBtn.addEventListener("click", () => updateLanguage("en"));
 kurdishBtn.addEventListener("click", () => updateLanguage("ku"));
+
+// ---------- WELCOME ----------
+function renderWelcome() {
+  const t = translations[currentLang];
+  main.innerHTML = `
+    <div class="welcome">
+      <h1>${t.title}</h1>
+      <p>${t.description}</p>
+    </div>
+  `;
+}
 renderWelcome();
 
-// ----------------- FEATURE BUTTONS -----------------
-main.addEventListener("click", (e) => {
-  if (e.target.classList.contains("feature-btn")) {
-    const action = e.target.dataset.action;
-    if (action === "createImage")
-      addMessage("bot", "🖼️ Type what image you want me to create.");
-    if (action === "summarizeText")
-      addMessage("bot", "🧾 Paste text for summarization.");
-    if (action === "analyzeImage")
-      addMessage("bot", "👁️ Upload an image to analyze.");
-    if (action === "moreOptions")
-      addMessage("bot", "⚙️ More features coming soon...");
-  }
-});
-
-// ----------------- CHAT -----------------
+// ---------- CHAT ----------
 function addMessage(role, text) {
   const div = document.createElement("div");
-  div.className = role;
+  div.className = `message ${role}`;
   div.textContent = text;
-  div.style.textAlign = role === "user" ? "right" : "left";
-  div.style.margin = "8px";
-  div.style.color = role === "user" ? "#60a5fa" : "#ccc";
   main.appendChild(div);
   main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
+  if (role === "bot") lastBotMessage = text;
+}
 
-  if (role === "bot" && text && text.length > 10) {
-    savedChats.push(text);
-    localStorage.setItem("savedChats", JSON.stringify(savedChats));
+// ---------- THINKING ----------
+function showThinking() {
+  const think = document.createElement("div");
+  think.className = "thinking";
+  think.textContent = currentLang === "ku" ? "چاوەڕوان بە..." : "Thinking...";
+  main.appendChild(think);
+  main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
+  return think;
+}
+
+// ---------- TYPEWRITER ----------
+async function typeText(el, text, delay = 20) {
+  el.textContent = "";
+  for (let i = 0; i < text.length; i++) {
+    el.textContent += text[i];
+    await new Promise((r) => setTimeout(r, delay));
   }
 }
 
-// ----------------- SAVED CHATS -----------------
-function showSavedChats() {
-  if (!savedChats.length) {
-    addMessage("bot", "💾 No saved chats yet.");
-    return;
-  }
-  const html = savedChats
-    .map((msg, i) => `<div>💬 <b>${i + 1}.</b> ${msg}</div>`)
-    .join("");
-  addMessage("bot", `Saved Chats:\n${html}`);
-}
-
-// ----------------- GEMINI -----------------
+// ---------- GEMINI ----------
 async function sendToGemini(prompt) {
   try {
     const res = await fetch(
@@ -211,22 +193,43 @@ async function sendToGemini(prompt) {
     );
   } catch (err) {
     console.error(err);
-    return "⚠️ Error contacting Gemini.";
+    return "⚠️ Error connecting to Gemini.";
   }
 }
 
-// ----------------- SEND MESSAGE -----------------
+// ---------- SEND ----------
 sendBtn.addEventListener("click", async () => {
   const text = input.value.trim();
   if (!text) return;
   addMessage("user", text);
   input.value = "";
+
+  const thinking = showThinking();
   const reply = await sendToGemini(text);
-  addMessage("bot", reply);
-  lastBotMessage = reply;
+  thinking.remove();
+
+  const botMsg = document.createElement("div");
+  botMsg.className = "message bot";
+  main.appendChild(botMsg);
+  await typeText(botMsg, reply);
+  main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
+  savedChats.push(reply);
+  localStorage.setItem("savedChats", JSON.stringify(savedChats));
 });
 
-// ----------------- IMAGE UPLOAD -----------------
+// ---------- SAVED CHATS ----------
+function showSavedChats() {
+  if (!savedChats.length) {
+    addMessage("bot", "💾 No saved chats yet.");
+    return;
+  }
+  const html = savedChats
+    .map((msg, i) => `<div>💬 <b>${i + 1}.</b> ${msg}</div>`)
+    .join("");
+  addMessage("bot", `Saved Chats:\n${html}`);
+}
+
+// ---------- IMAGE UPLOAD ----------
 const fileInput = document.createElement("input");
 fileInput.type = "file";
 fileInput.accept = "image/*";
@@ -242,16 +245,18 @@ fileInput.addEventListener("change", async (e) => {
   addMessage("user", "🖼️ Image uploaded...");
   const base64 = await fileToBase64(file);
   const reply = await sendImageToGemini(base64);
-  addMessage("bot", reply);
-  lastBotMessage = reply;
+  const botMsg = document.createElement("div");
+  botMsg.className = "message bot";
+  main.appendChild(botMsg);
+  await typeText(botMsg, reply);
 });
 
 function fileToBase64(file) {
   return new Promise((res, rej) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file);
     reader.onload = () => res(reader.result.split(",")[1]);
     reader.onerror = rej;
+    reader.readAsDataURL(file);
   });
 }
 
@@ -281,7 +286,7 @@ async function sendImageToGemini(base64) {
   return data.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No description.";
 }
 
-// ----------------- SPEAKER -----------------
+// ---------- SPEAKER ----------
 speakerBtn.addEventListener("click", () => {
   if (!lastBotMessage) return;
   const utter = new SpeechSynthesisUtterance(lastBotMessage);
@@ -289,7 +294,7 @@ speakerBtn.addEventListener("click", () => {
   speechSynthesis.speak(utter);
 });
 
-// ----------------- THEME TOGGLE -----------------
+// ---------- THEME ----------
 function toggleTheme() {
   isDarkMode = !isDarkMode;
   body.style.backgroundColor = isDarkMode ? "#0d1117" : "#f8fafc";
