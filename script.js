@@ -13,8 +13,8 @@ const uploadBtn = document.querySelector("#uploadImage");
 const homeBtn = document.querySelector("#homeBtn");
 const themeToggle = document.querySelector("#themeToggle");
 
-let selectedVoice = "male";
-let currentLang = "ku";
+let selectedVoice = "male"; // default
+let currentLang = "ku"; // Kurdish default
 let lastBotMessage = "";
 
 // ======================
@@ -34,7 +34,6 @@ async function playKurdishTTS(text) {
         format: "mp3",
       }),
     });
-
     const data = await res.json();
 
     if (data.audio_url) {
