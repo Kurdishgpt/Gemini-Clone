@@ -1,10 +1,5 @@
-// ---------- CONFIG ----------
-const config = {
-  GEMINI_API_KEY: "AIzaSyCw7nVjXZ9sWu9M8zdwjb5jFVJsV5AXEbg",
-  API_BASE_URL: "https://generativelanguage.googleapis.com/v1",
-  MODEL_NAME: "gemini-2.0-flash",
-  KURDISH_TTS_API: "ed527b648f5b06abc7e2a566c9501c795467a1e4",
-};
+// ---------- IMPORT CONFIG ----------
+import config from "./config.js";
 
 // ---------- ELEMENTS ----------
 const menuBtn = document.querySelector(".top-left .icon:nth-child(1)");
@@ -87,7 +82,7 @@ function addMessage(role, text) {
   if (role === "bot") lastBotMessage = text;
 }
 
-// ---------- AI REPLY (SIMULATED) ----------
+// ---------- SIMPLE BOT REPLY (for demo) ----------
 async function getBotReply(text) {
   const lower = text.toLowerCase();
   if (lower.includes("hi") || lower.includes("hello"))
@@ -183,7 +178,7 @@ function styleVoiceBtn(btn) {
   btn.onmouseleave = () => (btn.style.opacity = "1");
 }
 
-// ---------- PLAY TTS ----------
+// ---------- PLAY KURDISH TTS ----------
 async function playTTS(voiceType) {
   if (!lastBotMessage) {
     addMessage("bot", "⚠️ No message to read aloud yet!");
