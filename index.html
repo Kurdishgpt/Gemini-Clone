@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KurdishGPT Mobile Chat App</title>
 
-    <!-- Tailwind CSS -->
+    <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Showdown for Markdown rendering -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
 
     <style>
@@ -37,15 +35,18 @@
         
         /* Ensure main content is below the header and above the footer */
         #main-content-wrapper {
-            /* Full height minus header (h-16) and footer (p-4 + h-auto) */
+            /* Full height minus header (h-16) and input bar (approx. h-20) */
             height: calc(100vh - 4rem); 
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* To handle flex layout */
+            overflow: hidden; 
         }
 
-        /* Input bar fixed positioning - adjusted the structure to be outside the main flex container */
-        #input-container { z-index: 10; padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+        /* Input bar fixed positioning - crucial for mobile safe areas */
+        #input-container { 
+            z-index: 10; 
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom)); 
+        }
 
         /* Hide scrollbars for the chat container */
         #chat-container-scrollable::-webkit-scrollbar { width: 0; background: transparent; }
@@ -57,7 +58,7 @@
             align-items: center;
             padding: 8px 16px;
             border: 1px solid var(--input-border);
-            border-radius: 9999px; /* Pill shape */
+            border-radius: 9999px; 
             background-color: transparent;
             color: var(--text-light);
             font-size: 0.875rem;
@@ -103,16 +104,12 @@
     <!-- SIDEBAR BACKDROP & MENU -->
     <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-75 z-40 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
 
-
     <aside id="sidebar-menu" class="fixed top-0 left-0 h-full w-64 bg-black z-50 transform -translate-x-full transition-transform duration-300 shadow-2xl flex flex-col justify-between p-4 border-r border-gray-900">
-
         <!-- TOP SECTION: Search & Main Links -->
         <div>
-
             <div class="flex items-center justify-between p-2 mb-4">
                 <div class="flex items-center text-gray-400">
                     <i data-lucide="search" class="w-5 h-5 mr-2"></i>
-                    <!-- Sidebar Search Input -->
                     <input id="sidebar-search-input" type="text" placeholder="Search" class="bg-black text-white placeholder-gray-500 w-full focus:outline-none" />
                 </div>
                 <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-1 rounded-full" aria-label="Close sidebar">
@@ -123,20 +120,16 @@
             <div class="space-y-1">
                 <a href="#" onclick="clearChat(); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white font-medium">
                     <i data-lucide="sparkles" class="w-5 h-5 mr-3 text-purple-400"></i>
-                    <!-- New Chat Link Text -->
                     <span id="new-chat-link">New chat</span>
                 </a>
-
                 <a href="#" onclick="showFeatureNotAvailable('Library'); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white">
                     <i data-lucide="bookmark" class="w-5 h-5 mr-3 text-yellow-400"></i>
                     <span>Library</span>
                 </a>
-
                 <a href="#" onclick="showFeatureNotAvailable('GPTs'); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white">
                     <i data-lucide="bot" class="w-5 h-5 mr-3 text-red-400"></i>
                     <span>GPTs</span>
                 </a>
-
             </div>
 
             <!-- RECENT CHATS -->
@@ -146,13 +139,10 @@
                     <p class="text-xs text-gray-600 px-3 py-1">No recent chats</p>
                 </div>
             </div>
-
         </div>
-
 
         <!-- BOTTOM SECTION: User Profile/Settings -->
         <div class="border-t border-gray-800 pt-4">
-
             <a href="#" onclick="showFeatureNotAvailable('User Profile')" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors">
                 <i data-lucide="user" class="w-6 h-6 mr-3 text-gray-300"></i>
                 <span class="font-semibold">KURDISHGPT</span>
@@ -161,24 +151,17 @@
         </div>
     </aside>
 
-
     <!-- HEADER -->
     <header class="flex justify-between items-center p-4 h-16 sticky top-0 bg-black z-20 border-b border-gray-900">
-
-        <!-- Left: Sidebar Toggle -->
         <button onclick="toggleSidebar()" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Open menu">
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
-
-        <!-- Right: Language Toggle & New Chat Button -->
         <div class="flex items-center space-x-2">
-            <!-- LANGUAGE TOGGLE BUTTON (FIXED) -->
             <button id="language-toggle-btn" onclick="toggleLanguage()" 
                     class="text-white px-3 py-1 text-sm font-semibold rounded-full bg-gray-900 hover:bg-gray-800 transition-colors" 
                     aria-label="Toggle language">
-                <!-- Content set by JS: 'کوردی' or 'English' -->
+                <!-- Content set by JS -->
             </button>
-            
             <button onclick="clearChat()" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Start new chat">
                 <i data-lucide="rotate-cw" class="w-6 h-6"></i>
             </button>
@@ -193,12 +176,10 @@
             
             <!-- Home Screen Content -->
             <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4">
-                <!-- Main Title -->
                 <h1 class="text-3xl font-semibold mb-10 mt-16 text-center" id="main-header-title">What can I help with?</h1>
 
                 <!-- Prompt Suggestions with ChatGPT-like style -->
                 <div id="suggestion-buttons" class="flex flex-wrap justify-center gap-3 w-full px-4 sm:px-0">
-
                     <button onclick="setPrompt(config.PROMPTS.image.trim())" class="prompt-button">
                         <i data-lucide="image" class="w-5 h-5 text-green-400"></i>
                         <span>Create image</span>
@@ -218,7 +199,6 @@
                 </div>
             </div>
 
-
             <!-- Chat Messages Container -->
             <div id="chat-container-scrollable" class="hidden w-full h-full max-w-2xl mx-auto overflow-y-auto pt-4">
                 <!-- Messages will be injected here -->
@@ -237,21 +217,17 @@
         
         <h2 class="text-2xl font-bold text-center mb-8">What do you want to write?</h2>
 
-
         <!-- Top Grid of Primary Actions (Camera, Upload Photo, Upload File) -->
         <div class="w-full px-8 mb-8 mt-4">
             <div class="grid grid-cols-3 gap-4 max-w-sm mx-auto">
-                <!-- Camera -->
                 <button onclick="handleToolAction('Camera')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: var(--input-dark);">
                     <i data-lucide="camera" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Camera</p>
                 </button>
-                <!-- Upload Photo -->
                 <button onclick="handleToolAction('Upload Photo')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: var(--input-dark);">
                     <i data-lucide="image" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Photos</p>
                 </button>
-                <!-- Files (Upload File) -->
                 <button onclick="handleToolAction('Files')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: var(--input-dark);">
                     <i data-lucide="folder" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Files</p>
@@ -261,7 +237,6 @@
 
         <!-- Tools List -->
         <div class="flex-grow overflow-y-auto px-6 space-y-2">
-            <!-- Create Image -->
             <button onclick="handleToolAction('Create image', config.PROMPTS.image)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="image" class="w-6 h-6 mr-4 text-green-400"></i>
                 <div>
@@ -269,8 +244,6 @@
                     <p class="text-xs text-gray-400">Visualize anything</p>
                 </div>
             </button>
-
-            <!-- Thinking -->
             <button onclick="handleToolAction('Thinking', config.PROMPTS.thinking)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="lightbulb" class="w-6 h-6 mr-4 text-yellow-400"></i>
                 <div>
@@ -278,8 +251,6 @@
                     <p class="text-xs text-gray-400">Think longer for better answers</p>
                 </div>
             </button>
-
-            <!-- Deep research -->
             <button onclick="handleToolAction('Deep research', config.PROMPTS.research)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="flask-round" class="w-6 h-6 mr-4 text-red-400"></i>
                 <div>
@@ -287,124 +258,6 @@
                     <p class="text-xs text-gray-400">Get a detailed report</p>
                 </div>
             </button>
+            <button onclick="handleToolAction('Web search',
 
-            <!-- Web search (Uses Google Grounding) -->
-            <button onclick="handleToolAction('Web search', config.PROMPTS.search)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
-                <i data-lucide="globe" class="w-6 h-6 mr-4 text-blue-400"></i>
-                <div>
-                    <p class="font-semibold text-white">Web search</p>
-                    <p class="text-xs text-gray-400">Find real-time news and info</p>
-                </div>
-            </button>
-
-            <!-- Study and learn -->
-            <button onclick="handleToolAction('Study and learn', config.PROMPTS.study)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
-                <i data-lucide="book-open-text" class="w-6 h-6 mr-4 text-purple-400"></i>
-                <div>
-                    <p class="font-semibold text-white">Study and learn</p>
-                    <p class="text-xs text-gray-400">Learn a new concept</p>
-                </div>
-            </button>
-        </div>
-
-        <!-- Explore Tools Button -->
-        <div class="p-6">
-            <button onclick="handleToolAction('Explore tools')" class="w-full py-3 rounded-full font-bold text-center transition-colors" style="background-color: var(--ai-bubble); color: var(--text-light);">
-                Explore tools
-            </button>
-        </div>
-    </div>
-
-
-    <!-- INPUT BAR / FOOTER (ChatGPT Style) -->
-    <footer id="input-container" class="fixed bottom-0 w-full flex justify-center bg-black p-4 z-10">
-        <div class="w-full max-w-2xl flex items-end p-2 rounded-2xl border" style="background-color: var(--input-dark); border-color: var(--input-border);">
-
-            <!-- Left: Attachment/Tools Button (Always visible) -->
-            <button id="attachment-button" onclick="openAddToolsModal()"
-                    class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors"
-                    aria-label="Add attachment or open tools">
-                <i data-lucide="plus" class="w-6 h-6"></i>
-            </button>
-
-            <!-- Center: Input Wrapper -->
-            <div class="flex flex-grow items-center mx-1">
-                <input id="chat-input"
-                       type="text"
-                       placeholder="Ask KurdishGPT"
-                       oninput="checkInputStatus()"
-                       class="w-full bg-transparent text-white focus:outline-none py-2 text-base">
-            </div>
-
-            <!-- Right: Send or Mic/Wave Button -->
-
-            <!-- Send Button (Hidden by default) -->
-            <button id="send-button" onclick="handleSendMessage()"
-                    class="flex-shrink-0 p-2 text-blue-400 hover:text-blue-300 transition-colors hidden"
-                    aria-label="Send message">
-                <i data-lucide="send" class="w-6 h-6"></i>
-            </button>
-
-            <!-- Mic/Wave Button (Visible when input is empty) -->
-            <button id="mic-button" onclick="showFeatureNotAvailable('Voice Input')"
-                    class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors"
-                    aria-label="Voice input">
-                <!-- Using a volume-2 icon to represent the voice prompt indicator -->
-                <i data-lucide="volume-2" class="w-6 h-6"></i>
-            </button>
-
-        </div>
-    </footer>
-
-
-    <script>
-        // --- GEMINI API CONFIGURATION ---
-        const API_KEY = ""; // Placeholder. Canvas runtime injects the actual key.
-        const API_MODEL = 'gemini-2.5-flash-preview-09-2025';
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`;
-
-
-        // --- GLOBAL CONFIGURATION ---
-        const config = {
-            PROMPTS: {
-                image: 'Generate a high-quality image of ',
-                summarize: 'Summarize the plot of ',
-                brainstorm: 'Brainstorm 5 ideas for a startup in Erbil.',
-                more: 'What are some fun facts about the Kurdistan Region of Iraq?',
-                thinking: 'Analyze the historical significance of the Medes.',
-                research: 'Write a deep report on the future of Kurdish language technology.',
-                search: 'Find real-time news about the price of oil.',
-                study: 'Explain the concept of neural networks in simple terms.',
-            },
-            MESSAGES: {
-                action_copy_success: 'Content copied to clipboard!',
-                action_copied: 'Copied.',
-                action_tts: 'Text-to-Speech is playing the response now.',
-                action_regenerate: 'Regenerating response...',
-                action_like: 'Thanks for the feedback!',
-                action_dislike: 'Thanks for the feedback. We will improve.',
-                action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
-                error_api_call_failed: 'Failed to get a response from the API.',
-            }
-        };
-
-
-        // --- GLOBAL STATE, AND LANGUAGE DATA ---
-        let chatHistory = [];
-        let isTyping = false;
-        let currentLanguage = 'EN'; // Default language
-
-        // Language Data for UI elements (Sorani Kurdish using Latin script)
-        const LANG_DATA = {
-            'EN': {
-                button: 'کوردی',
-                header_title: 'What can I help with?',
-                input_placeholder: 'Ask KurdishGPT',
-                new_chat: 'New chat',
-                search_placeholder: 'Search',
-                create_image: 'Create image',
-                summarize_text: 'Summarize text',
-                brainstorm: 'Brainstorm',
-                more: 'More',
-            },
-      
+    
