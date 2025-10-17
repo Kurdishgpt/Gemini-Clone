@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KurdishGPT Mobile Chat (ChatGPT Style)</title>
+    <title>KurdishGPT Mobile Chat (Live API)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;600;700&display=swap" rel="stylesheet">
@@ -339,6 +339,16 @@
     let chatHistory = [];
     let isTyping = false;
 
+    // Configuration for Gemini API and Model Parameters (based on your snippet)
+    const GEMINI_CONFIG = {
+        // We use the required preview model and leave the API key as an empty string for the environment
+        MODEL_NAME: "gemini-2.5-flash-preview-09-2025", 
+        API_BASE_URL: "https://generativelanguage.googleapis.com/v1beta/models/",
+        MAX_TOKENS: 2048,
+        TEMPERATURE: 0.7, // Fixed missing comma
+        ENABLE_SEARCH_GROUNDING: true, // Enable search grounding by default
+    };
+
     // Configuration for static text and prompts
     const CONFIG = {
         PROMPTS: {
@@ -359,7 +369,8 @@
             action_like: 'Thanks for the feedback!',
             action_dislike: 'Thanks for the feedback. We will improve.',
             action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
-            error_api_call_failed: 'Failed to get a response from the API.',
+            error_api_call_failed: 'Failed to get a response from the API. Please check the console for details.',
+            error_api_blocked: 'The response was blocked due to safety settings.',
         }
     };
 
@@ -499,34 +510,107 @@
         isTyping = true;
 
         // 4. Render AI thinking/typing bubble
-        const thinkingBubble = renderMessage('model', '', true);
+        const thinkingBubble = renderMessage('model', 'Thinking...', true);
 
-        // 5. Simulate API call
-        simulateApiCall(userPrompt, thinkingBubble);
+        // 5. Call the Gemini API
+        callGeminiAPI(userPrompt, thinkingBubble);
     }
 
     /**
-     * Simulates the async API call to Gemini.
+     * Calls the Gemini API, gets a full response, and initiates streaming display.
      * @param {string} prompt - The user's prompt.
      * @param {HTMLElement} thinkingBubble - The bubble element to stream into.
      */
-    async function simulateApiCall(prompt, thinkingBubble) {
-        // Prepare a dummy response based on the prompt
-        let responseContent = `You asked about: **${prompt}**.
+    async function callGeminiAPI(prompt, thinkingBubble) {
+        // API Key setup (required for environment)
+        const apiKey = "";
+        const model = GEMINI_CONFIG.MODEL_NAME;
+        const apiUrl = `${GEMINI_CONFIG.API_BASE_URL}${model}:generateContent?key=${apiKey}`;
 
-This is a functional clone of the **ChatGPT mobile interface**. It uses:
-* **Tailwind CSS** for a responsive, dark-mode design.
-* **Showdown.js** to render content using Markdown, supporting lists, bold text, and code blocks.
-* A JavaScript simulation to demonstrate **response streaming** (typing effect).
+        // Build the chat history for context
+        // Ensure roles are mapped correctly for the API: 'model' -> 'model', 'user' -> 'user'
+        const contents = chatHistory.map(msg => ({
+            role: msg.role === 'model' ? 'model' : 'user', 
+            parts: [{ text: msg.content }]
+        })).slice(-10); // Keep only the last 10 messages for context
 
-Feel free to try any of the prompt suggestions or type your own question!
+        const payload = {
+            contents: contents,
+            generationConfig: {
+                maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS,
+                temperature: GEMINI_CONFIG.TEMPERATURE,
+            },
+            // Add Google Search grounding if enabled
+            ...(GEMINI_CONFIG.ENABLE_SEARCH_GROUNDING && { tools: [{ "google_search": {} }] })
+        };
+        
+        // Error handling and Exponential Backoff (retry logic)
+        const maxRetries = 3;
+        let attempt = 0;
+        let finalResult = null;
+        let success = false;
 
-*What would you like to ask or change in the UI next?*`;
+        while (attempt < maxRetries && !success) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
-        // Start streaming simulation
-        await streamResponse(responseContent, thinkingBubble);
+                const result = await response.json();
+                finalResult = result;
+                success = true; // Mark as successful
 
-        // Re-enable input
+            } catch (error) {
+                console.error(`Gemini API Attempt ${attempt + 1} failed:`, error);
+                attempt++;
+                if (attempt < maxRetries) {
+                    const delay = Math.pow(2, attempt) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        // 1. Determine final text and sources
+        const candidate = finalResult?.candidates?.[0];
+        
+        let aiResponseText = CONFIG.MESSAGES.error_api_call_failed;
+        let sources = [];
+
+        if (candidate && candidate.content?.parts?.[0]?.text) {
+            aiResponseText = candidate.content.parts[0].text;
+            
+            // Extract grounding sources
+            const groundingMetadata = candidate.groundingMetadata;
+            if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                sources = groundingMetadata.groundingAttributions
+                    .map(attribution => ({
+                        uri: attribution.web?.uri,
+                        title: attribution.web?.title,
+                    }))
+                    .filter(source => source.uri && source.title);
+            }
+
+        } else if (candidate?.safetyRatings?.length > 0) {
+            // Handle blocked response
+            aiResponseText = CONFIG.MESSAGES.error_api_blocked;
+            console.warn("Response blocked by safety settings:", candidate.safetyRatings);
+        }
+
+        // 2. Initiate the streaming display
+        try {
+            await streamResponse(aiResponseText, thinkingBubble, sources);
+        } catch (e) {
+            console.error("Error during response streaming:", e);
+            showToast("An error occurred while displaying the response.");
+        }
+        
+        // 3. Re-enable input
         const inputElement = document.getElementById('chat-input');
         inputElement.removeAttribute('disabled');
         isTyping = false;
@@ -535,26 +619,27 @@ Feel free to try any of the prompt suggestions or type your own question!
 
 
     /**
-     * Simulates the streaming effect of a response.
+     * Simulates the streaming effect of a response and handles source display.
      * @param {string} content - The full response text.
      * @param {HTMLElement} bubble - The target bubble element.
+     * @param {Array<Object>} [sources=[]] - Array of grounding sources.
      */
-    async function streamResponse(content, bubble) {
+    async function streamResponse(content, bubble, sources = []) {
         const contentDiv = bubble.querySelector('.markdown-content');
         const footerDiv = bubble.querySelector('.ai-bubble-footer');
 
         const totalChunks = content.length;
         let streamedText = '';
 
-        // Remove the loading ellipsis
+        // Clear loading ellipsis and insert the cursor
         contentDiv.innerHTML = `<span class="typing-cursor"></span>`;
 
         // Simulate chunk delivery
         for (let i = 0; i < totalChunks; i++) {
             streamedText += content[i];
 
-            // Only update DOM every N characters or if it's the last character
-            if (i % 10 === 0 || i === totalChunks - 1) {
+            // Update DOM every N characters or if it's the last character
+            if (i % 5 === 0 || i === totalChunks - 1) {
                 const htmlContent = converter.makeHtml(streamedText);
                 contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
                 scrollChatToBottom();
@@ -564,13 +649,29 @@ Feel free to try any of the prompt suggestions or type your own question!
 
         // Finalize the content
         contentDiv.innerHTML = converter.makeHtml(content);
-        // Safely remove the cursor (it might not be there if the content was very short)
         const cursor = bubble.querySelector('.typing-cursor');
         if (cursor) cursor.remove();
         
+        // Add sources display if sources exist
+        if (sources.length > 0) {
+            const sourcesDiv = document.createElement('div');
+            sourcesDiv.className = 'text-xs text-gray-500 pt-2 border-t border-gray-800 mt-2 flex flex-wrap gap-1';
+            sourcesDiv.innerHTML = '<span class="font-semibold mr-1 text-purple-400">Sources:</span>';
+            sources.slice(0, 3).forEach((source, index) => {
+                const link = document.createElement('a');
+                link.href = source.uri;
+                link.target = '_blank';
+                link.className = 'text-blue-400 hover:text-blue-300 transition-colors underline rounded-full px-2 py-0.5 bg-gray-700';
+                // Truncate title for mobile view
+                link.textContent = `#${index + 1} ${source.title.substring(0, 30)}${source.title.length > 30 ? '...' : ''}`;
+                sourcesDiv.appendChild(link);
+            });
+            contentDiv.appendChild(sourcesDiv);
+        }
+
         footerDiv.classList.remove('hidden');
 
-        // Add to chat history
+        // Add final response to chat history
         chatHistory.push({ role: 'model', content: content });
 
         scrollChatToBottom();
@@ -611,7 +712,7 @@ Feel free to try any of the prompt suggestions or type your own question!
 
             if (isThinking) {
                 // Initial content for thinking state
-                contentDiv.innerHTML = `<i data-lucide="ellipsis" class="w-6 h-6 animate-pulse"></i>`;
+                contentDiv.innerHTML = `<i data-lucide="loader" class="w-6 h-6 animate-spin text-gray-500"></i>`;
             } else {
                 contentDiv.innerHTML = converter.makeHtml(content);
             }
