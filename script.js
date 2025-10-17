@@ -71,7 +71,7 @@ overlay.className = "overlay";
 document.body.appendChild(overlay);
 
 function renderSidebar() {
-  const items = ["🌟 New Chat", "💾 Saved Chats", "⚙️ Settings", "🌙 Toggle Theme", "🌐 Change Language"];
+  const items = ["➕ New Chat", "💾 Saved Chats", "⚙️ Settings", "🌙 Toggle Theme", "🌐 Change Language"];
   sidebar.innerHTML = `<h2>Kurdish GPT</h2><ul>${items.map((i, idx) => `<li data-action="${idx}">${i}</li>`).join("")}</ul>`;
 }
 renderSidebar();
