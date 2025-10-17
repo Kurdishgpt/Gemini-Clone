@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KurdishGPT Mobile Chat (ChatGPT Style)</title>
+    <title>KurdishGPT Mobile Chat (Fixed Send Button)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -312,21 +312,14 @@
                        class="w-full bg-transparent text-white focus:outline-none py-2 text-base">
             </div>
 
-            <!-- Right: Send or Mic/Wave Button -->
-
-            <!-- Send Button -->
+            <!-- Right: Send Button (ALWAYS visible and enabled when not typing) -->
             <button id="send-button" onclick="handleSendMessage()"
-                    class="flex-shrink-0 p-2 text-blue-400 hover:text-blue-300 transition-colors hidden"
-                    aria-label="Send message" disabled> <!-- Added disabled back for initial state -->
+                    class="flex-shrink-0 p-2 text-blue-400 hover:text-blue-300 transition-colors"
+                    aria-label="Send message">
                 <i data-lucide="send" class="w-6 h-6"></i>
             </button>
-
-            <!-- Mic/Wave Button (Visible when input is empty) -->
-            <button id="mic-button" onclick="showFeatureNotAvailable('Voice Input')"
-                    class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors"
-                    aria-label="Voice input">
-                <i data-lucide="volume-2" class="w-6 h-6"></i>
-            </button>
+            
+            <!-- Removed the Mic/Wave button to keep the Send button permanently visible -->
 
         </div>
     </footer>
@@ -491,24 +484,26 @@
         }
     }
 
-    /** Switches the input bar buttons between Mic/Wave and Send based on input text and typing status. */
+    /**
+     * FIX: Simplified status check. Since the send button is always visible, 
+     * this function only controls its disabled state.
+     */
     function checkInputStatus() {
         const input = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
-        const micButton = document.getElementById('mic-button');
 
         const hasText = input.value.trim().length > 0;
         
-        // Show send button if there is text, not currently typing, and auth is ready
-        if (hasText && !isTyping && authReady) {
-            sendButton.classList.remove('hidden');
-            sendButton.removeAttribute('disabled');
-            micButton.classList.add('hidden');
-        } else {
-            // Hide send button and disable it otherwise
-            sendButton.classList.add('hidden');
+        // Disable the button if the user is currently typing (waiting for a response) 
+        // OR if the input is empty AND authentication isn't ready.
+        if (isTyping || !authReady) {
             sendButton.setAttribute('disabled', 'true');
-            micButton.classList.remove('hidden');
+            sendButton.classList.add('opacity-50');
+        } else {
+            // Enable the button if we are ready and not typing. 
+            // The user must still type text for the message to be sent in handleSendMessage()
+            sendButton.removeAttribute('disabled');
+            sendButton.classList.remove('opacity-50');
         }
     }
 
@@ -517,9 +512,14 @@
         const inputElement = document.getElementById('chat-input');
         const userPrompt = inputElement.value.trim();
 
+        // Critical Check: Block if input is empty, currently typing, or not authenticated.
         if (userPrompt === '' || isTyping || !authReady) {
-             // Log why the send was blocked
              console.log(`Blocked send: Prompt empty (${userPrompt === ''}), Typing (${isTyping}), Auth not ready (${!authReady})`);
+             // If the button was clicked but the input is empty, do nothing.
+             if (userPrompt === '') {
+                 // Prevent silent failure feedback if button is clicked but no text.
+                 inputElement.focus();
+             }
              return;
         }
 
@@ -531,11 +531,11 @@
         chatHistory.push({ role: 'user', content: userPrompt });
         renderMessage('user', userPrompt);
 
-        // 3. Clear input and disable
-        inputElement.value = '';
+        // 3. Clear input and disable UI
+        inputElement.value = ''; // Clear input immediately
         inputElement.setAttribute('disabled', 'true');
         isTyping = true;
-        checkInputStatus(); // Update button immediately (should now be disabled/mic visible)
+        checkInputStatus(); // Update button to disabled state
 
         // 4. Render AI thinking/typing bubble
         const thinkingBubble = renderMessage('model', '', true);
@@ -549,10 +549,10 @@
             const errorText = `**Error:** ${error.message || CONFIG.MESSAGES.error_api_call_failed}. Please try again later.`;
             streamResponse(errorText, [], thinkingBubble);
         } finally {
-            // 6. Re-enable input and button (FIX: ensures button state is reset after process)
+            // 6. Re-enable input and button
             inputElement.removeAttribute('disabled');
             isTyping = false;
-            checkInputStatus(); // Re-enable send button if text exists, otherwise show mic
+            checkInputStatus(); // Re-enable send button
             inputElement.focus();
         }
     }
@@ -816,10 +816,11 @@
 
     // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Bind Enter key to send message
+        // Bind Enter key to send message (This is already working as you requested)
         document.getElementById('chat-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                // We directly call the send message function here
                 document.getElementById('send-button').click();
             }
         });
@@ -827,7 +828,7 @@
         // Initialize Lucide icons on load
         lucide.createIcons();
 
-        // Initialize Firebase
+        // Initialize Firebase and check status (which controls button enable/disable)
         initFirebase();
     });
 </script>
