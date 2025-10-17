@@ -225,7 +225,7 @@
                     <i data-lucide="camera" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Camera</p>
                 </button>
-                <!-- Upload Photo (Updated label from 'Photos') -->
+                <!-- Upload Photo -->
                 <button onclick="handleToolAction('Upload Photo')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="image" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Upload Photo</p>
@@ -337,9 +337,10 @@
 
 
 <script>
+    // NOTE: For deployment, the following configuration object and all functions can be placed
+    // into a separate 'script.js' file and imported using a script tag in the HTML head.
+
     // --- GLOBAL CONFIGURATION (Simulating 'import config from "../config.js";') ---
-    // In a real module-based deployment, this object would be exported from a separate config.js file.
-    // Since we are limited to a single HTML file, we define it directly here.
     const config = {
         PROMPTS: {
             image: 'Generate a high-quality image of ',
@@ -426,4 +427,4 @@
         }
 
         // 3. Input Placeholder
-        cons
+        const chatInput = document.get
