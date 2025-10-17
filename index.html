@@ -335,13 +335,15 @@
     // --- GLOBAL STATE AND CONFIG ---
     let chatHistory = [];
     let isTyping = false;
+    
+    // NOTE: This is where you would typically use an import statement in a modular environment:
+    // import { GEMINI_CONFIG, CONFIG } from './config.js';
 
-    // Configuration for Gemini API and Model Parameters (from the 'script.js' context)
+    // Configuration for Gemini API and Model Parameters (now defined locally)
     const GEMINI_CONFIG = {
-        // NOTE: The API key below is included as requested by the user, 
-        // but in production environments, it should be an empty string for secure
-        // automatic authentication in this sandbox.
-        API_KEY: "AIzaSyCw7nVjXZ9sWu9M8zdwjb5jFVJsV5AXEbg", 
+        // API Key is set to an empty string ("") to allow the secure sandbox 
+        // environment to automatically inject your key at runtime.
+        API_KEY: "", 
         MODEL_NAME: "gemini-2.5-flash-preview-09-2025", 
         API_BASE_URL: "https://generativelanguage.googleapis.com/v1beta/models/",
         MAX_TOKENS: 2048,
