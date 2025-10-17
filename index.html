@@ -1,80 +1,478 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Chat</title>
-  <style>
-    /* your existing styles (unchanged) */
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-    body { background-color: #0d1117; color: #fff; display: flex; flex-direction: column; height: 100vh; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background-color: #0d1117; border-bottom: 1px solid #222; }
-    .top-left, .top-right { display: flex; align-items: center; gap: 10px; }
-    .icon { font-size: 20px; color: #ccc; cursor: pointer; }
-    .lang-buttons { display: flex; background-color: #11161d; border-radius: 10px; overflow: hidden; }
-    .lang-buttons button { padding: 6px 18px; border: none; background: none; color: #ccc; font-size: 15px; cursor: pointer; }
-    .lang-buttons .active { background-color: #2563eb; color: #fff; }
-    main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 16px; }
-    .chat-icon { background-color: #172030; padding: 16px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
-    .chat-icon svg { width: 32px; height: 32px; stroke: #2563eb; fill: none; stroke-width: 2; }
-    h1 { font-size: 1.5rem; font-weight: 600; }
-    p { color: #9ca3af; font-size: 0.95rem; line-height: 1.5; max-width: 300px; }
-    .btn { background-color: transparent; color: #fff; border: 1px solid #2f3541; border-radius: 8px; padding: 10px 16px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; }
-    .btn:hover { border-color: #2563eb; }
-    .input-area { display: flex; align-items: center; padding: 10px 14px; border-top: 1px solid #222; background-color: #0d1117; gap: 10px; }
-    .input-area input { flex: 1; background: none; border: 1px solid #2f3541; border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 0.95rem; }
-    .input-area input::placeholder { color: #7d8695; }
-    .input-icons { display: flex; align-items: center; gap: 8px; }
-    .send-btn, .mic-btn { background: none; border: none; cursor: pointer; }
-    .send-btn svg, .mic-btn svg { width: 22px; height: 22px; stroke: #2563eb; fill: none; stroke-width: 2; }
-    .mic-btn svg { stroke: #9ca3af; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Mobile Clone</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Load Showdown for Markdown parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --input-dark: #1f1f1f;
+            --btn-plus: #505050;
+            --btn-suggest: #2e2e2e;
+            --purple-prime: #6d28d9; /* Similar to the "Get Plus" button */
+            --user-bubble: #348feb;
+            --ai-bubble: #2e2e2e;
+            --text-light: #ffffff;
+            --text-faded: #a0a0a0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+        }
+
+        /* Styling for the floating input bar */
+        #input-container {
+            /* Ensures it sits on top of everything at the bottom */
+            z-index: 10;
+        }
+
+        /* Custom scrollbar for Webkit browsers (for the chat container) */
+        #chat-container-scrollable::-webkit-scrollbar {
+            width: 0;
+            background: transparent;
+        }
+        #chat-container-scrollable {
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .markdown-content {
+            white-space: pre-wrap;
+        }
+
+        /* Styling for Markdown rendering */
+        .markdown-content h1 { font-size: 1.5em; font-weight: 700; margin-top: 1em; }
+        .markdown-content h2 { font-size: 1.3em; font-weight: 600; margin-top: 1em; }
+        .markdown-content p { margin-bottom: 0.5em; }
+        .markdown-content ul, .markdown-content ol { list-style-position: inside; margin-left: 1.5em; margin-bottom: 0.5em; }
+        .markdown-content code { background-color: #383838; padding: 2px 4px; border-radius: 4px; }
+        .markdown-content pre { background-color: #1a1a1a; padding: 10px; border-radius: 6px; overflow-x: auto; margin-top: 1em; margin-bottom: 1em; border: 1px solid #1f1f1f; }
+
+        .typing-indicator span {
+            display: inline-block;
+            background-color: var(--text-light);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin: 0 1px;
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(-6px);
+            }
+        }
+    </style>
 </head>
-<body>
+<body class="flex flex-col h-screen antialiased">
 
-  <!-- TOP BAR -->
-  <div class="top-bar">
-    <div class="top-left">
-      <span class="icon">📋</span>
-      <span class="icon">🏠</span>
-    </div>
+    <!-- Top Bar (Header) -->
+    <header class="flex justify-between items-center p-4 h-16 sticky top-0 bg-black z-20 border-b border-gray-900">
+        <!-- Menu Icon -->
+        <button class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Open menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <!-- Get Plus Button -->
+        <button class="flex items-center px-4 py-2 text-sm font-bold rounded-full shadow-lg transition-transform transform hover:scale-[1.03]"
+                style="background-color: var(--purple-prime); color: var(--text-light);">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Get Plus
+        </button>
+        <!-- Refresh Icon -->
+        <button class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Refresh chat">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </button>
+    </header>
 
-    <div class="lang-buttons">
-      <button class="active">English</button>
-      <button>کوردی</button>
-    </div>
+    <!-- Main Content Area -->
+    <main id="main-content" class="flex-grow flex flex-col items-center justify-center p-4 overflow-y-auto" role="log">
+        <!-- Home Screen (Initial View) -->
+        <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4">
+            <h1 class="text-3xl font-semibold mb-10 mt-16 text-center">What can I help with?</h1>
+            
+            <div id="suggestion-buttons" class="grid grid-cols-2 gap-4 w-full px-4 sm:px-0">
+                <!-- Suggestion Button Template -->
+                <button onclick="setPrompt('Create a detailed image of a futuristic city.')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:opacity-80" style="background-color: var(--btn-suggest);">
+                    <svg class="w-6 h-6 mb-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-7-5h2m-2 0a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    Create image
+                </button>
+                <button onclick="setPrompt('Give me advice on starting a new hobby.')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:opacity-80" style="background-color: var(--btn-suggest);">
+                    <svg class="w-6 h-6 mb-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.203 5 7.5 5A3.493 3.493 0 004 8.5c0 1.586.402 3.125 1.157 4.482.35.617.755 1.18 1.203 1.693l2.003 2.003V18h3.992l2.003-2.003a7.485 7.485 0 001.203-1.693c.755-1.357 1.157-2.896 1.157-4.482A3.493 3.493 0 0016.5 5c-1.703 0-3.332.477-4.5 1.253z"></path></svg>
+                    Get advice
+                </button>
+                <button onclick="setPrompt('Summarize the plot of the movie Dune.')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:opacity-80" style="background-color: var(--btn-suggest);">
+                    <svg class="w-6 h-6 mb-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-4.75a1.25 1.25 0 011.25-1.25h1.5a1.25 1.25 0 011.25 1.25V17m-6 0h6m-6 0v2a2 2 0 002 2h2a2 2 0 002-2v-2m-8 0h8m-8 0v-2.25A4.75 4.75 0 0112 10a4.75 4.75 0 014.75 4.75V17m-8-12.75V7a2 2 0 002 2h4a2 2 0 002-2V4.25"></path></svg>
+                    Summarize text
+                </button>
+                <button onclick="setPrompt('Write a short poem about the night sky.')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:opacity-80" style="background-color: var(--btn-suggest);">
+                    <svg class="w-6 h-6 mb-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 100-2 1 1 0 000 2zm0 7a1 1 0 100-2 1 1 0 000 2zm0 7a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+                    More
+                </button>
+            </div>
+        </div>
 
-    <div class="top-right">
-      <span class="icon">🔊</span>
-      <span class="icon">☀️</span>
-    </div>
-  </div>
+        <!-- Chat Container (Conversation View - Initially hidden) -->
+        <div id="chat-container-scrollable" class="hidden w-full h-full max-w-2xl mx-auto overflow-y-auto pt-4 pb-20">
+            <!-- Messages will be injected here -->
+        </div>
 
-  <!-- MAIN CONTENT -->
-  <main>
-    <div class="chat-icon">
-      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    </div>
-    <h1>Welcome to AI chat</h1>
-    <p>Start a conversation in English or Kurdish, use voice commands, or generate images</p>
-    <button class="btn">💬 Tell me about Kurdish culture</button>
-  </main>
+    </main>
 
-  <!-- INPUT AREA -->
-  <div class="input-area">
-    <input type="text" placeholder="Type your message...">
-    <div class="input-icons">
-      <button class="mic-btn">
-        <svg viewBox="0 0 24 24"><path d="M12 1v10m0 4v7m5-7a5 5 0 0 1-10 0"/></svg>
-      </button>
-      <button class="send-btn">
-        <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
-      </button>
-    </div>
-  </div>
+    <!-- Input Bar (Fixed at Bottom) -->
+    <footer id="input-container" class="fixed bottom-0 w-full p-3 bg-black">
+        <div class="max-w-xl mx-auto flex items-center gap-2 px-1">
+            <button id="add-button" class="flex-shrink-0 p-3 rounded-full transition-colors" style="background-color: var(--btn-plus);" aria-label="Add file or attachment">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+            <div class="relative flex-grow flex items-center rounded-3xl" style="background-color: var(--input-dark);">
+                <textarea
+                    id="user-input"
+                    class="flex-grow p-3 pl-4 pr-16 text-sm rounded-3xl resize-none focus:outline-none focus:ring-1 focus:ring-transparent transition-all shadow-md"
+                    style="min-height: 50px; background-color: var(--input-dark); border: none; color: var(--text-light);"
+                    placeholder="Ask ChatGPT"
+                    rows="1"
+                    oninput="autoResizeTextarea(this)"
+                    onkeydown="handleKeyDown(event)"
+                    aria-label="User input message"
+                ></textarea>
+                <!-- Voice/Sound Buttons -->
+                <button
+                    id="send-button"
+                    onclick="sendMessage()"
+                    class="absolute right-0 top-1/2 transform -translate-y-1/2 mr-1 p-2 rounded-full transition-colors disabled:opacity-50"
+                    style="background-color: transparent; color: var(--text-faded);"
+                    aria-label="Send message"
+                    disabled
+                >
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                </button>
+                <button
+                    id="mic-button"
+                    class="absolute right-0 top-1/2 transform -translate-y-1/2 mr-1 p-2 rounded-full transition-colors"
+                    style="background-color: transparent; color: var(--text-faded);"
+                    aria-label="Use microphone"
+                >
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-2.3c0 3-2.54 5.1-5.3 5.1S6.7 14.7 6.7 11.7h-1c0 3.4 2.72 6.23 6 6.72V21h2v-3.58c3.28-.48 6-3.31 6-6.72h-1z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </footer>
 
-  <!-- ✅ Connect JS files as modules -->
-  <script type="module" src="./script.js"></script>
+    <script>
+        // --- Configuration ---
+        const MODEL_NAME = 'gemini-2.5-flash-preview-09-2025';
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=`;
+        const API_KEY = ""; // Canvas will automatically populate this.
 
+        // --- DOM Elements ---
+        const homeScreen = document.getElementById('home-screen');
+        const chatContainer = document.getElementById('chat-container-scrollable');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const micButton = document.getElementById('mic-button');
+        const showdownConverter = new showdown.Converter();
+        let chatStarted = false; // State to track if conversation has begun
+
+        // --- Utility Functions ---
+
+        /**
+         * Sets the input field text and switches to the chat view.
+         * @param {string} prompt - The text to set in the input field.
+         */
+        function setPrompt(prompt) {
+            userInput.value = prompt;
+            autoResizeTextarea(userInput);
+            // Manually enable send button since input value is set
+            sendButton.disabled = false;
+            sendButton.style.backgroundColor = 'var(--user-bubble)'; // Change icon to a 'send' arrow (not currently an arrow, but matches the active button look)
+            sendButton.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>';
+            
+            // Switch to chat view immediately
+            if (!chatStarted) {
+                startChat();
+            }
+            userInput.focus();
+        }
+
+        /**
+         * Switches the view from home screen to chat conversation.
+         */
+        function startChat() {
+            homeScreen.classList.add('hidden');
+            chatContainer.classList.remove('hidden');
+            chatContainer.classList.add('flex-grow', 'flex-col');
+            chatStarted = true;
+            // Add initial welcome message here, now that the chat view is active
+             createMessageBubble("Hello! What's on your mind? I'm ready to chat.", 'ai');
+        }
+
+        /**
+         * Converts Markdown text to HTML.
+         * @param {string} markdownText - The text in Markdown format.
+         * @returns {string} The text in HTML format.
+         */
+        function markdownToHtml(markdownText) {
+            // Simple replacement for inline code blocks to handle the dark theme better
+            let html = showdownConverter.makeHtml(markdownText);
+            
+            // Post-processing to add an AI header to the first message bubble for clarity
+            const header = `
+                <div class="flex items-center mb-2">
+                    <svg class="w-5 h-5 mr-2 text-purple-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                    <span class="font-semibold text-purple-400">Gemini AI</span>
+                </div>
+            `;
+            return header + html;
+        }
+
+        /**
+         * Retries the fetch request with exponential backoff.
+         */
+        async function exponentialBackoffFetch(url, options, retries = 3) {
+            try {
+                const response = await fetch(url + API_KEY, options);
+                if (!response.ok && retries > 0) {
+                    const delay = Math.pow(2, 3 - retries) * 1000 + Math.random() * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return exponentialBackoffFetch(url, options, retries - 1);
+                } else if (!response.ok) {
+                    throw new Error(`API call failed after ${3} retries with status: ${response.status}`);
+                }
+                return response;
+            } catch (error) {
+                if (retries > 0) {
+                    const delay = Math.pow(2, 3 - retries) * 1000 + Math.random() * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return exponentialBackoffFetch(url, options, retries - 1);
+                }
+                throw error;
+            }
+        }
+
+        /**
+         * Creates and appends a message bubble to the chat container.
+         * @param {string} content - The text content of the message.
+         * @param {string} role - 'user' or 'ai'.
+         * @returns {HTMLElement} The created message element.
+         */
+        function createMessageBubble(content, role) {
+            const isUser = role === 'user';
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = `flex mb-4 w-full ${isUser ? 'justify-end' : 'justify-start'}`;
+
+            const bubbleContent = document.createElement('div');
+            // Base styles: max-w-full on mobile, rounded
+            bubbleContent.className = `p-3 rounded-xl shadow-lg text-sm max-w-[85%]`;
+
+            if (isUser) {
+                // User styles
+                bubbleContent.style.backgroundColor = 'var(--user-bubble)';
+                bubbleContent.classList.add('rounded-br-sm');
+                bubbleContent.textContent = content;
+            } else {
+                // AI styles
+                bubbleContent.style.backgroundColor = 'var(--ai-bubble)';
+                bubbleContent.classList.add('rounded-tl-sm');
+                // Apply Markdown to the AI response, including the internal header
+                bubbleContent.innerHTML = markdownToHtml(content);
+                bubbleContent.classList.add('markdown-content');
+            }
+
+            bubbleDiv.appendChild(bubbleContent);
+            chatContainer.appendChild(bubbleDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return bubbleContent;
+        }
+
+        /**
+         * Creates and appends the loading indicator (AI is typing).
+         * @returns {HTMLElement} The typing indicator element.
+         */
+        function createLoadingIndicator() {
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = `flex mb-4 w-full justify-start`;
+            bubbleDiv.id = 'loading-indicator';
+
+            const bubbleContent = document.createElement('div');
+            bubbleContent.className = `p-3 rounded-xl rounded-tl-sm shadow-lg text-sm flex items-center typing-indicator max-w-fit`;
+            bubbleContent.style.backgroundColor = 'var(--ai-bubble)';
+            bubbleContent.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-purple-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                    <span class="text-gray-400 mr-2">Typing</span>
+                </div>
+                <span></span><span></span><span></span>
+            `;
+
+            bubbleDiv.appendChild(bubbleContent);
+            chatContainer.appendChild(bubbleDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return bubbleDiv;
+        }
+
+        /**
+         * Auto-resizes the textarea based on content.
+         * Also controls the send/mic button visibility.
+         * @param {HTMLTextAreaElement} element - The textarea element.
+         */
+        function autoResizeTextarea(element) {
+            element.style.height = 'auto';
+            const newHeight = element.scrollHeight;
+            element.style.height = newHeight + 'px';
+
+            // Control button visibility and state
+            const hasText = element.value.trim().length > 0;
+            if (hasText) {
+                sendButton.disabled = false;
+                sendButton.style.backgroundColor = 'var(--user-bubble)';
+                sendButton.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>'; // Send Arrow
+                micButton.style.display = 'none';
+            } else {
+                sendButton.disabled = true;
+                sendButton.style.backgroundColor = 'transparent';
+                sendButton.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-2.3c0 3-2.54 5.1-5.3 5.1S6.7 14.7 6.7 11.7h-1c0 3.4 2.72 6.23 6 6.72V21h2v-3.58c3.28-.48 6-3.31 6-6.72h-1z"></path></svg>'; // Mic icon (hidden in favor of dedicated mic button, but keeping the structure)
+                micButton.style.display = 'block';
+            }
+        }
+
+        /**
+         * Handles the Enter key press in the input field.
+         * @param {KeyboardEvent} event - The keyboard event.
+         */
+        function handleKeyDown(event) {
+            // Check if Enter is pressed without Shift
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Prevent default new line behavior
+                sendMessage();
+            }
+        }
+
+        // --- Main Logic ---
+
+        /**
+         * Sends the user message and initiates the API call.
+         */
+        async function sendMessage() {
+            const userQuery = userInput.value.trim();
+            if (userQuery === "") return;
+
+            // 1. If chat hasn't started, switch views
+            if (!chatStarted) {
+                startChat();
+            }
+
+            // 2. Clear input and disable UI
+            userInput.value = '';
+            autoResizeTextarea(userInput);
+            sendButton.disabled = true;
+            userInput.disabled = true;
+            micButton.disabled = true;
+
+            // 3. Display user message
+            createMessageBubble(userQuery, 'user');
+
+            // 4. Display loading indicator
+            const loadingIndicator = createLoadingIndicator();
+
+            try {
+                const systemPrompt = "You are a highly capable and friendly AI assistant. Your goal is to provide accurate and helpful responses to the user's queries. Format your responses using clear, well-structured Markdown.";
+
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    // Enable Google Search grounding for up-to-date info
+                    tools: [{ "google_search": {} }],
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    },
+                };
+
+                const options = {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                };
+
+                const response = await exponentialBackoffFetch(API_URL, options);
+                const result = await response.json();
+
+                // 5. Extract text and sources
+                const candidate = result.candidates?.[0];
+                let aiResponseText = "Sorry, I encountered an error and could not generate a response.";
+                let sources = [];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    aiResponseText = candidate.content.parts[0].text;
+
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri && source.title);
+                    }
+                }
+
+                // 6. Remove loading indicator
+                loadingIndicator.remove();
+
+                // 7. Display AI message
+                const aiBubble = createMessageBubble(aiResponseText, 'ai');
+
+                // If sources exist, manually add them to the inner HTML after markdown conversion
+                if (sources.length > 0) {
+                    const citationList = sources.map((s, index) =>
+                        `<li class="mt-1"><a href="${s.uri}" target="_blank" class="text-blue-400 hover:text-blue-300 underline" title="${s.title}">${s.title || 'Source ' + (index + 1)}</a></li>`
+                    ).join('');
+
+                    const sourceBlock = document.createElement('div');
+                    sourceBlock.className = "mt-4 pt-2 border-t border-gray-700 text-xs";
+                    sourceBlock.innerHTML = `<p class="font-bold text-gray-500 mb-1">Sources:</p><ul class="list-none ml-0 p-0 text-gray-400">${citationList}</ul>`;
+
+                    aiBubble.appendChild(sourceBlock);
+                }
+
+
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                loadingIndicator?.remove();
+                createMessageBubble("An error occurred while connecting to the AI. Please try again.", 'ai');
+            } finally {
+                // 8. Re-enable UI
+                userInput.disabled = false;
+                micButton.disabled = false;
+                autoResizeTextarea(userInput); // Re-run to update send/mic button state based on empty input
+                userInput.focus();
+            }
+        }
+
+        // Initialize textarea resize and set focus on load
+        window.onload = () => {
+            autoResizeTextarea(userInput);
+            userInput.focus();
+        };
+
+    </script>
 </body>
 </html>
+
