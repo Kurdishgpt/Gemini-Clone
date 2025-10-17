@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KurdishGPT Mobile Chat (Simplified Language Toggle)</title>
+    <title>KurdishGPT Mobile Chat (ChatGPT Style)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons for better aesthetic and more icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Showdown for Markdown rendering -->
@@ -101,8 +101,7 @@
             <div class="flex items-center justify-between p-2 mb-4">
                 <div class="flex items-center text-gray-400">
                     <i data-lucide="search" class="w-5 h-5 mr-2"></i>
-                    <!-- Sidebar Search Input -->
-                    <input id="sidebar-search-input" type="text" placeholder="Search" class="bg-black text-white placeholder-gray-500 w-full focus:outline-none" />
+                    <input type="text" placeholder="Search" class="bg-black text-white placeholder-gray-500 w-full focus:outline-none" />
                 </div>
                 <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-1 rounded-full" aria-label="Close sidebar">
                     <i data-lucide="x" class="w-6 h-6"></i>
@@ -112,8 +111,7 @@
             <div class="space-y-1">
                 <a href="#" onclick="clearChat(); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white font-medium">
                     <i data-lucide="sparkles" class="w-5 h-5 mr-3 text-purple-400"></i>
-                    <!-- New Chat Link Text -->
-                    <span id="new-chat-link">New chat</span>
+                    <span>New chat</span>
                 </a>
 
                 <a href="#" onclick="showFeatureNotAvailable('Library'); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white">
@@ -159,10 +157,11 @@
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
 
-        <!-- Center: Translate Button -->
+        <!-- Center: Get Plus Button -->
         <div class="flex-grow flex justify-center">
-            <button id="translate-button" onclick="toggleLanguage()" class="px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
-                <!-- Text updated by JS -->
+            <button onclick="showFeatureNotAvailable('Get Plus')" class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
+                <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
+                Get Plus
             </button>
         </div>
 
@@ -177,25 +176,24 @@
     <main id="main-content" class="flex-grow flex flex-col items-center justify-start p-4 overflow-y-auto" role="log">
 
         <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4">
-            <!-- Main Title -->
-            <h1 class="text-3xl font-semibold mb-10 mt-16 text-center" id="main-header-title">What can I help with?</h1>
+            <h1 class="text-3xl font-semibold mb-10 mt-16 text-center">What can I help with?</h1>
 
             <!-- Prompt Suggestions with ChatGPT-like style -->
             <div id="suggestion-buttons" class="flex flex-wrap justify-center gap-3 w-full px-4 sm:px-0">
 
-                <button onclick="setPrompt(config.PROMPTS.image.trim())" class="prompt-button">
+                <button onclick="setPrompt(CONFIG.PROMPTS.image.trim())" class="prompt-button">
                     <i data-lucide="image" class="w-5 h-5 text-green-400"></i>
                     <span>Create image</span>
                 </button>
-                <button onclick="setPrompt(config.PROMPTS.summarize.trim())" class="prompt-button">
+                <button onclick="setPrompt(CONFIG.PROMPTS.summarize.trim())" class="prompt-button">
                     <i data-lucide="file-text" class="w-5 h-5 text-orange-400"></i>
                     <span>Summarize text</span>
                 </button>
-                <button onclick="setPrompt(config.PROMPTS.brainstorm.trim())" class="prompt-button">
+                <button onclick="setPrompt(CONFIG.PROMPTS.brainstorm.trim())" class="prompt-button">
                     <i data-lucide="lightbulb" class="w-5 h-5 text-yellow-400"></i>
                     <span>Brainstorm</span>
                 </button>
-                <button onclick="setPrompt(config.PROMPTS.more.trim())" class="prompt-button">
+                <button onclick="setPrompt(CONFIG.PROMPTS.more.trim())" class="prompt-button">
                     <i data-lucide="more-horizontal" class="w-5 h-5 text-purple-400"></i>
                     <span>More</span>
                 </button>
@@ -217,7 +215,7 @@
             </button>
         </div>
 
-        <!-- Top Grid of Primary Actions (Camera, Upload Photo, Upload File) -->
+        <!-- Top Grid of Primary Actions (Camera, Photos, Files) -->
         <div class="w-full px-8 mb-8 mt-4">
             <div class="grid grid-cols-3 gap-4 max-w-sm mx-auto">
                 <!-- Camera -->
@@ -225,12 +223,12 @@
                     <i data-lucide="camera" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Camera</p>
                 </button>
-                <!-- Upload Photo -->
-                <button onclick="handleToolAction('Upload Photo')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
+                <!-- Photos -->
+                <button onclick="handleToolAction('Photos')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="image" class="w-8 h-8 mb-2 text-white"></i>
-                    <p>Upload Photo</p>
+                    <p>Photos</p>
                 </button>
-                <!-- Files (Upload File) -->
+                <!-- Files -->
                 <button onclick="handleToolAction('Files')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="folder" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Files</p>
@@ -241,7 +239,7 @@
         <!-- Tools List -->
         <div class="flex-grow overflow-y-auto px-6 space-y-2">
             <!-- Create Image -->
-            <button onclick="handleToolAction('Create image', config.PROMPTS.image)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+            <button onclick="handleToolAction('Create image', CONFIG.PROMPTS.image)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="image" class="w-6 h-6 mr-4 text-green-400"></i>
                 <div>
                     <p class="font-semibold text-white">Create image</p>
@@ -250,7 +248,7 @@
             </button>
 
             <!-- Thinking -->
-            <button onclick="handleToolAction('Thinking', config.PROMPTS.thinking)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+            <button onclick="handleToolAction('Thinking', CONFIG.PROMPTS.thinking)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="lightbulb" class="w-6 h-6 mr-4 text-yellow-400"></i>
                 <div>
                     <p class="font-semibold text-white">Thinking</p>
@@ -259,7 +257,7 @@
             </button>
 
             <!-- Deep research -->
-            <button onclick="handleToolAction('Deep research', config.PROMPTS.research)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+            <button onclick="handleToolAction('Deep research', CONFIG.PROMPTS.research)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="flask-round" class="w-6 h-6 mr-4 text-red-400"></i>
                 <div>
                     <p class="font-semibold text-white">Deep research</p>
@@ -268,7 +266,7 @@
             </button>
 
             <!-- Web search -->
-            <button onclick="handleToolAction('Web search', config.PROMPTS.search)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+            <button onclick="handleToolAction('Web search', CONFIG.PROMPTS.search)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="globe" class="w-6 h-6 mr-4 text-blue-400"></i>
                 <div>
                     <p class="font-semibold text-white">Web search</p>
@@ -277,7 +275,7 @@
             </button>
 
             <!-- Study and learn -->
-            <button onclick="handleToolAction('Study and learn', config.PROMPTS.study)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+            <button onclick="handleToolAction('Study and learn', CONFIG.PROMPTS.study)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="book-open-text" class="w-6 h-6 mr-4 text-purple-400"></i>
                 <div>
                     <p class="font-semibold text-white">Study and learn</p>
@@ -337,11 +335,12 @@
 
 
 <script>
-    // NOTE: For deployment, the following configuration object and all functions can be placed
-    // into a separate 'script.js' file and imported using a script tag in the HTML head.
+    // --- GLOBAL STATE AND CONFIG ---
+    let chatHistory = [];
+    let isTyping = false;
 
-    // --- GLOBAL CONFIGURATION (Simulating 'import config from "../config.js";') ---
-    const config = {
+    // Configuration for static text and prompts
+    const CONFIG = {
         PROMPTS: {
             image: 'Generate a high-quality image of ',
             summarize: 'Summarize the plot of ',
@@ -364,38 +363,6 @@
         }
     };
 
-
-    // --- GLOBAL STATE, AND LANGUAGE DATA ---
-    let chatHistory = [];
-    let isTyping = false;
-    let currentLanguage = 'EN'; // Default language
-
-    // Language Data for UI elements (Sorani Kurdish using Latin script)
-    const LANG_DATA = {
-        'EN': {
-            button: 'کوردی', // When in EN mode, button shows the target language (KU)
-            header_title: 'What can I help with?',
-            input_placeholder: 'Ask KurdishGPT',
-            new_chat: 'New chat',
-            search_placeholder: 'Search',
-            create_image: 'Create image',
-            summarize_text: 'Summarize text',
-            brainstorm: 'Brainstorm',
-            more: 'More',
-        },
-        'KU': {
-            button: 'English', // When in KU mode, button shows the target language (EN)
-            header_title: 'چۆن دەتوانم یارمەتیت بدەم؟',
-            input_placeholder: 'پرسیار لە کوردی جی پی تی بکە',
-            new_chat: 'وتووێژی نوێ',
-            search_placeholder: 'گەڕان',
-            create_image: 'دروستکردنی وێنە',
-            summarize_text: 'پوختەکردنی دەق',
-            brainstorm: 'بیرکردنەوە',
-            more: 'زیاتر',
-        }
-    };
-
     // Markdown Converter Setup
     const converter = new showdown.Converter({
         tables: true,
@@ -405,26 +372,64 @@
     });
 
 
-    // --- LANGUAGE TOGGLE FUNCTIONS ---
+    // --- CHAT INTERFACE FUNCTIONS ---
 
     /**
-     * Updates all relevant UI elements based on the currentLanguage state.
-     * @param {string} lang - 'EN' or 'KU'.
+     * Displays a feature not available message using the toast notification.
+     * @param {string} featureName - The name of the feature (e.g., 'Library').
      */
-    function updateUIForLanguage(lang) {
-        const data = LANG_DATA[lang];
+    function showFeatureNotAvailable(featureName) {
+        const message = CONFIG.MESSAGES.action_feature_not_available(featureName);
+        showToast(message);
+    }
 
-        // 1. Translate Button in Header (Simplified)
-        const translateButton = document.getElementById('translate-button');
-        if (translateButton) {
-            translateButton.innerHTML = data.button;
+    /**
+     * Toggles the sidebar visibility.
+     */
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        const isOpen = sidebar.classList.contains('translate-x-0');
+
+        if (isOpen) {
+            sidebar.classList.remove('translate-x-0');
+            sidebar.classList.add('-translate-x-full');
+            backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+        } else {
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100', 'pointer-events-auto');
         }
+    }
 
-        // 2. Main Title
-        const headerTitle = document.getElementById('main-header-title');
-        if (headerTitle) {
-            headerTitle.textContent = data.header_title;
-        }
+    /**
+     * Clears the chat history and resets the view to the home screen.
+     */
+    function clearChat() {
+        chatHistory = [];
+        const chatContainer = document.getElementById('chat-container-scrollable');
+        const homeScreen = document.getElementById('home-screen');
+        chatContainer.innerHTML = '';
+        chatContainer.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
+        document.getElementById('chat-input').value = '';
+        checkInputStatus();
+    }
 
-        // 3. Input Placeholder
-        const chatInput = document.get
+    /**
+     * Sets the text input value and focuses it. Used by suggestion buttons.
+     * @param {string} prompt - The text to put into the input field.
+     */
+    function setPrompt(prompt) {
+        document.getElementById('chat-input').value = prompt;
+        document.getElementById('chat-input').focus();
+        checkInputStatus();
+    }
+
+    /**
+     * Opens the Add Tools modal.
+     */
+    function openAddToolsModal() {
+        const modal = document.getElement
