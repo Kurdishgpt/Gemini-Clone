@@ -1,295 +1,459 @@
-import config from "./config.js";
+// --- GEMINI API CONFIGURATION ---
+const API_KEY = ""; // Placeholder. Canvas runtime injects the actual key.
+const API_MODEL = 'gemini-2.5-flash-preview-09-2025';
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`;
 
-// ---------- ELEMENTS ----------
-const englishBtn = document.querySelector(".lang-buttons button:nth-child(1)");
-const kurdishBtn = document.querySelector(".lang-buttons button:nth-child(2)");
-const sendBtn = document.querySelector(".send-btn");
-const input = document.querySelector(".input-area input");
-const main = document.querySelector("main");
-const uploadBtn = document.querySelector(".mic-btn");
-const sidebarBtn = document.querySelector(".top-left .icon:nth-child(1)");
-const homeBtn = document.querySelector(".top-left .icon:nth-child(2)");
-const voiceBtn = document.querySelector(".top-right .icon:nth-child(1)");
-const themeBtn = document.querySelector(".top-right .icon:nth-child(2)");
-const body = document.body;
 
-let currentLang = "en";
-let isDarkMode = true;
-let lastBotMessage = "";
-let savedChats = JSON.parse(localStorage.getItem("savedChats") || "[]");
-
-// ---------- STYLES ----------
-const style = document.createElement("style");
-style.textContent = `
-.message { padding:10px 14px; border-radius:14px; margin:8px; max-width:85%; line-height:1.5; animation:fadeIn 0.3s ease; }
-.message.user { background:#2563eb; color:white; align-self:flex-end; border-bottom-right-radius:4px; }
-.message.bot { background:#1f2937; color:#e5e7eb; border-bottom-left-radius:4px; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(5px);} to{opacity:1;transform:translateY(0);} }
-
-.thinking { display:flex; align-items:center; margin:10px; }
-.dot { width:8px; height:8px; background-color:#9ca3af; border-radius:50%; margin:0 3px; opacity:0.3; animation:blink 1.4s infinite; }
-.dot:nth-child(2){animation-delay:0.2s;} .dot:nth-child(3){animation-delay:0.4s;}
-@keyframes blink{0%,100%{opacity:0.3;transform:translateY(0);}50%{opacity:1;transform:translateY(-3px);}}
-
-/* Sidebar */
-.sidebar{position:fixed;top:0;left:-260px;width:240px;height:100%;background:#111827;color:white;transition:left 0.3s ease;padding:20px;z-index:9999;box-shadow:3px 0 10px rgba(0,0,0,0.3);}
-.sidebar.open{left:0;}
-.sidebar h2{color:#3b82f6;margin-bottom:20px;}
-.sidebar li{margin:12px 0;cursor:pointer;}
-.sidebar li:hover{color:#3b82f6;transform:translateX(4px);transition:0.2s;}
-.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);opacity:0;visibility:hidden;transition:opacity 0.3s ease;z-index:9998;}
-.overlay.active{opacity:1;visibility:visible;}
-
-/* Voice Panel */
-.voice-panel{position:fixed;right:20px;top:70px;background:#1f2937;color:white;border-radius:10px;padding:15px;display:none;flex-direction:column;z-index:10000;width:180px;}
-.voice-panel button{background:#2563eb;border:none;color:white;margin:5px 0;padding:8px;border-radius:8px;cursor:pointer;}
-.voice-panel button:hover{background:#3b82f6;}
-`;
-document.head.appendChild(style);
-
-// ---------- TRANSLATIONS ----------
-const translations = {
-  en: {
-    title: "Welcome to Kurdish GPT",
-    description: "Start a conversation, upload images, or use the menu.",
-    placeholder: "Type your message...",
-  },
-  ku: {
-    title: "بەخێربێیت بۆ Kurdish GPT",
-    description: "گفتوگۆیەک دەستپێبکە، وێنە بەرز بکە یان لیستی لاوەکە بەکاربەرە.",
-    placeholder: "پەیامەکت بنووسە...",
-  },
+// --- GLOBAL CONFIGURATION ---
+const config = {
+    PROMPTS: {
+        image: 'Generate a high-quality image of ',
+        summarize: 'Summarize the plot of ',
+        brainstorm: 'Brainstorm 5 ideas for a startup in Erbil.',
+        more: 'What are some fun facts about the Kurdistan Region of Iraq?',
+        thinking: 'Analyze the historical significance of the Medes.',
+        research: 'Write a deep report on the future of Kurdish language technology.',
+        search: 'Find real-time news about the price of oil.',
+        study: 'Explain the concept of neural networks in simple terms.',
+    },
+    MESSAGES: {
+        action_copy_success: 'Content copied to clipboard!',
+        action_copied: 'Copied.',
+        action_tts: 'Text-to-Speech is playing the response now.',
+        action_regenerate: 'Regenerating response...',
+        action_like: 'Thanks for the feedback!',
+        action_dislike: 'Thanks for the feedback. We will improve.',
+        action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
+        error_api_call_failed: 'Failed to get a response from the API.',
+    }
 };
 
-// ---------- SIDEBAR ----------
-const sidebar = document.createElement("div");
-sidebar.className = "sidebar";
-document.body.appendChild(sidebar);
 
-const overlay = document.createElement("div");
-overlay.className = "overlay";
-document.body.appendChild(overlay);
+// --- GLOBAL STATE, AND LANGUAGE DATA ---
+let chatHistory = [];
+let isTyping = false;
+let currentLanguage = 'EN'; // Default language
 
-function renderSidebar() {
-  const items = ["🌟 New Chat", "💾 Saved Chats", "⚙️ Settings", "🌙 Toggle Theme", "🌐 Change Language"];
-  sidebar.innerHTML = `<h2>Kurdish GPT</h2><ul>${items.map((i, idx) => `<li data-action="${idx}">${i}</li>`).join("")}</ul>`;
-}
-renderSidebar();
-
-function openSidebar() { sidebar.classList.add("open"); overlay.classList.add("active"); }
-function closeSidebar() { sidebar.classList.remove("open"); overlay.classList.remove("active"); }
-
-sidebarBtn.addEventListener("click", openSidebar);
-overlay.addEventListener("click", closeSidebar);
-homeBtn.addEventListener("click", () => { closeSidebar(); renderWelcome(); });
-
-// ---------- Sidebar actions ----------
-sidebar.addEventListener("click", (e) => {
-  if (e.target.tagName !== "LI") return;
-  const idx = parseInt(e.target.dataset.action);
-  closeSidebar();
-  if (idx === 0) main.innerHTML = "";
-  if (idx === 1) showSavedChats();
-  if (idx === 2) addMessage("bot", "⚙️ Settings coming soon...");
-  if (idx === 3) toggleTheme();
-  if (idx === 4) updateLanguage(currentLang === "en" ? "ku" : "en");
-});
-
-// ---------- LANGUAGE ----------
-function updateLanguage(lang) {
-  currentLang = lang;
-  englishBtn.classList.toggle("active", lang === "en");
-  kurdishBtn.classList.toggle("active", lang === "ku");
-  renderWelcome();
-}
-englishBtn.addEventListener("click", () => updateLanguage("en"));
-kurdishBtn.addEventListener("click", () => updateLanguage("ku"));
-
-// ---------- WELCOME ----------
-function renderWelcome() {
-  const t = translations[currentLang];
-  main.innerHTML = `<div class="welcome"><h1>${t.title}</h1><p>${t.description}</p></div>`;
-}
-renderWelcome();
-
-// ---------- CHAT ----------
-function addMessage(role, text) {
-  const div = document.createElement("div");
-  div.className = `message ${role}`;
-  div.textContent = text;
-  main.appendChild(div);
-  main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
-  if (role === "bot") lastBotMessage = text;
-}
-
-function showThinking() {
-  const think = document.createElement("div");
-  think.className = "thinking";
-  for (let i = 0; i < 3; i++) {
-    const dot = document.createElement("div");
-    dot.className = "dot";
-    think.appendChild(dot);
-  }
-  main.appendChild(think);
-  main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
-  return think;
-}
-
-async function typeText(el, text, delay = 20) {
-  el.textContent = "";
-  for (let i = 0; i < text.length; i++) {
-    el.textContent += text[i];
-    await new Promise((r) => setTimeout(r, delay));
-  }
-}
-
-// ---------- GEMINI ----------
-async function sendToGemini(prompt) {
-  try {
-    const res = await fetch(`${config.API_BASE_URL}/models/${config.MODEL_NAME}:generateContent?key=${config.GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: `${prompt} (${currentLang})` }] }] }),
-    });
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No response.";
-  } catch {
-    return "⚠️ Error connecting to Gemini.";
-  }
-}
-
-// ---------- SEND ----------
-sendBtn.addEventListener("click", async () => {
-  const text = input.value.trim();
-  if (!text) return;
-  addMessage("user", text);
-  input.value = "";
-
-  const thinking = showThinking();
-  const reply = await sendToGemini(text);
-  thinking.remove();
-
-  const botMsg = document.createElement("div");
-  botMsg.className = "message bot";
-  main.appendChild(botMsg);
-  await typeText(botMsg, reply);
-  main.scrollTo({ top: main.scrollHeight, behavior: "smooth" });
-  savedChats.push(reply);
-  localStorage.setItem("savedChats", JSON.stringify(savedChats));
-});
-
-// ---------- SAVED CHATS ----------
-function showSavedChats() {
-  if (!savedChats.length) {
-    addMessage("bot", "💾 No saved chats yet.");
-    return;
-  }
-  const html = savedChats.map((msg, i) => `<div>💬 <b>${i + 1}.</b> ${msg}</div>`).join("");
-  addMessage("bot", `Saved Chats:\n${html}`);
-}
-
-// ---------- IMAGE UPLOAD ----------
-const fileInput = document.createElement("input");
-fileInput.type = "file";
-fileInput.accept = "image/*";
-fileInput.style.display = "none";
-document.body.appendChild(fileInput);
-
-uploadBtn.textContent = "📷";
-uploadBtn.addEventListener("click", () => fileInput.click());
-
-fileInput.addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  addMessage("user", "🖼️ Image uploaded...");
-  const base64 = await fileToBase64(file);
-  const reply = await sendImageToGemini(base64);
-  const botMsg = document.createElement("div");
-  botMsg.className = "message bot";
-  main.appendChild(botMsg);
-  await typeText(botMsg, reply);
-});
-
-function fileToBase64(file) {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = () => res(reader.result.split(",")[1]);
-    reader.onerror = rej;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function sendImageToGemini(base64) {
-  const res = await fetch(`${config.API_BASE_URL}/models/gemini-1.5-flash:generateContent?key=${config.GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { text: `Describe this image in ${currentLang === "ku" ? "Kurdish" : "English"}:` },
-            { inline_data: { mime_type: "image/jpeg", data: base64 } },
-          ],
-        },
-      ],
-    }),
-  });
-  const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ No description.";
-}
-
-// ---------- VOICE PANEL ----------
-const voicePanel = document.createElement("div");
-voicePanel.className = "voice-panel";
-voicePanel.innerHTML = `
-  <button data-voice="male">🔊 Male Voice</button>
-  <button data-voice="female">🎤 Female Voice</button>
-  <button class="close-voice">❌ Close</button>
-`;
-document.body.appendChild(voicePanel);
-
-voiceBtn.textContent = "🎙️";
-voiceBtn.addEventListener("click", () => {
-  voicePanel.style.display = voicePanel.style.display === "flex" ? "none" : "flex";
-});
-
-voicePanel.addEventListener("click", async (e) => {
-  if (e.target.classList.contains("close-voice")) {
-    voicePanel.style.display = "none";
-    return;
-  }
-  const voice = e.target.dataset.voice;
-  if (!lastBotMessage) return;
-  await playKurdishTTS(lastBotMessage, voice);
-});
-
-// ---------- KURDISH TTS ----------
-async function playKurdishTTS(text, voice = "male") {
-  try {
-    const res = await fetch("https://api.kurdishtts.com/v1/tts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer ed527b648f5b06abc7e2a566c9501c795467a1e4",
-      },
-      body: JSON.stringify({ text, voice }),
-    });
-    const data = await res.json();
-    if (data.audio_url) {
-      new Audio(data.audio_url).play();
-    } else {
-      addMessage("bot", "⚠️ Could not generate voice.");
+// Language Data for UI elements (Sorani Kurdish using Latin script)
+const LANG_DATA = {
+    'EN': {
+        button: 'کوردی',
+        header_title: 'What can I help with?',
+        input_placeholder: 'Ask KurdishGPT',
+        new_chat: 'New chat',
+        search_placeholder: 'Search',
+        create_image: 'Create image',
+        summarize_text: 'Summarize text',
+        brainstorm: 'Brainstorm',
+        more: 'More',
+    },
+    'KU': {
+        button: 'English',
+        header_title: 'چۆن دەتوانم یارمەتیت بدەم؟',
+        input_placeholder: 'پرسیار لە کوردی جی پی تی بکە',
+        new_chat: 'وتووێژی نوێ',
+        search_placeholder: 'گەڕان',
+        create_image: 'دروستکردنی وێنە',
+        summarize_text: 'پوختەکردنی دەق',
+        brainstorm: 'بیرکردنەوە',
+        more: 'زیاتر',
     }
-  } catch {
-    addMessage("bot", "⚠️ Kurdish TTS connection failed.");
-  }
+};
+
+// Markdown Converter Setup (Requires Showdown library, loaded in HTML head)
+const converter = new showdown.Converter({
+    tables: true,
+    strikethrough: true,
+    tasklists: true,
+    simpleLineBreaks: true
+});
+
+
+// --- UTILITY FUNCTIONS ---
+
+function updateUIForLanguage(lang) {
+    const data = LANG_DATA[lang];
+
+    // document.getElementById('translate-button').innerHTML = data.button;
+    document.getElementById('main-header-title').textContent = data.header_title;
+    document.getElementById('chat-input').placeholder = data.input_placeholder;
+    document.getElementById('sidebar-search-input').placeholder = data.search_placeholder;
+    document.getElementById('new-chat-link').textContent = data.new_chat;
+
+    const suggestionTexts = [data.create_image, data.summarize_text, data.brainstorm, data.more];
+    const suggestionButtons = document.querySelectorAll('#suggestion-buttons .prompt-button span');
+    suggestionButtons.forEach((span, index) => {
+        if (suggestionTexts[index]) {
+            span.textContent = suggestionTexts[index];
+        }
+    });
+
+    // Re-create lucide icons after updating the DOM structure or contents
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
-// ---------- THEME ----------
-function toggleTheme() {
-  isDarkMode = !isDarkMode;
-  body.style.backgroundColor = isDarkMode ? "#0d1117" : "#f8fafc";
-  body.style.color = isDarkMode ? "#fff" : "#111";
-  themeBtn.textContent = isDarkMode ? "☀️" : "🌙";
+function toggleLanguage() {
+    currentLanguage = currentLanguage === 'EN' ? 'KU' : 'EN';
+    updateUIForLanguage(currentLanguage);
 }
-themeBtn.addEventListener("click", toggleTheme);
+
+function showFeatureNotAvailable(featureName) {
+    const message = config.MESSAGES.action_feature_not_available(featureName);
+    showToast(message);
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar-menu');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const isOpen = sidebar.classList.contains('translate-x-0');
+
+    if (isOpen) {
+        sidebar.classList.remove('translate-x-0');
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+        backdrop.classList.add('opacity-0', 'pointer-events-none');
+    } else {
+        sidebar.classList.remove('-translate-x-full');
+        sidebar.classList.add('translate-x-0');
+        backdrop.classList.remove('opacity-0', 'pointer-events-none');
+        backdrop.classList.add('opacity-100', 'pointer-events-auto');
+    }
+}
+
+function clearChat() {
+    chatHistory = [];
+    document.getElementById('chat-container-scrollable').innerHTML = '';
+    document.getElementById('chat-container-scrollable').classList.add('hidden');
+    document.getElementById('home-screen').classList.remove('hidden');
+    document.getElementById('chat-input').value = '';
+    checkInputStatus();
+    updateUIForLanguage(currentLanguage);
+}
+
+function setPrompt(prompt) {
+    document.getElementById('chat-input').value = prompt;
+    document.getElementById('chat-input').focus();
+    checkInputStatus();
+}
+
+function openAddToolsModal() {
+    document.getElementById('add-tools-modal').classList.remove('hidden');
+}
+
+function closeAddToolsModal() {
+    document.getElementById('add-tools-modal').classList.add('hidden');
+}
+
+function handleToolAction(tool, prompt = '') {
+    closeAddToolsModal();
+    if (prompt) {
+        setPrompt(prompt);
+    } else {
+        showFeatureNotAvailable(tool);
+    }
+}
+
+function checkInputStatus() {
+    const input = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-button');
+    const micButton = document.getElementById('mic-button');
+
+    if (input.value.trim().length > 0) {
+        sendButton.classList.remove('hidden');
+        micButton.classList.add('hidden');
+    } else {
+        sendButton.classList.add('hidden');
+        micButton.classList.remove('hidden');
+    }
+}
+
+function scrollChatToBottom() {
+    const container = document.getElementById('chat-container-scrollable');
+    if (container) {
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+function showToast(message) {
+    let toast = document.getElementById('chat-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'chat-toast';
+        toast.className = 'fixed bottom-24 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-700 text-white text-sm rounded-full shadow-lg transition-opacity duration-300 z-50 opacity-0';
+        document.body.appendChild(toast);
+    }
+
+    toast.textContent = message;
+    toast.classList.remove('opacity-0');
+    toast.classList.add('opacity-100');
+
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+    }, 3000);
+}
+
+function copyToClipboard(text) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast(config.MESSAGES.action_copy_success);
+}
+
+// --- RENDERING FUNCTIONS ---
+
+function renderMessage(role, content, isThinking = false) {
+    const chatContainer = document.getElementById('chat-container-scrollable');
+
+    const bubbleContainer = document.createElement('div');
+    bubbleContainer.className = `flex mb-4 max-w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    bubbleContainer.style.direction = 'ltr';
+
+    const bubble = document.createElement('div');
+    bubble.className = `rounded-xl p-3 max-w-[85%] sm:max-w-[70%] shadow-lg`;
+    bubble.style.backgroundColor = role === 'user' ? 'var(--user-bubble)' : 'var(--ai-bubble)';
+    bubble.style.color = 'var(--text-light)';
+
+    if (role === 'user') {
+        bubble.classList.add('rounded-tr-sm');
+        bubble.innerHTML = `<p class="whitespace-pre-wrap">${content}</p>`;
+    } else {
+        bubble.classList.add('rounded-tl-sm', 'flex', 'flex-col');
+        bubble.style.textAlign = 'left';
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = `markdown-content pb-2`;
+
+        if (isThinking) {
+            contentDiv.innerHTML = `<i data-lucide="ellipsis" class="w-6 h-6 animate-pulse"></i>`;
+        } else {
+            contentDiv.innerHTML = converter.makeHtml(content);
+        }
+        bubble.appendChild(contentDiv);
+
+        const footerDiv = document.createElement('div');
+        footerDiv.className = `ai-bubble-footer pt-2 flex justify-end text-xs space-x-3 text-gray-400 ${isThinking ? 'hidden' : ''}`;
+
+        const actions = [
+            { icon: 'copy', action: () => copyToClipboard(content) },
+            { icon: 'volume-2', action: () => showFeatureNotAvailable('Text-to-Speech') },
+            { icon: 'rotate-cw', action: () => showFeatureNotAvailable('Regenerate') },
+            { icon: 'thumbs-up', action: () => showToast(config.MESSAGES.action_like) },
+            { icon: 'thumbs-down', action: () => showToast(config.MESSAGES.action_dislike) },
+        ];
+
+        actions.forEach(item => {
+            const btn = document.createElement('button');
+            btn.className = 'hover:text-white transition-colors p-1';
+            btn.innerHTML = `<i data-lucide="${item.icon}" class="w-4 h-4"></i>`;
+            btn.onclick = item.action;
+            footerDiv.appendChild(btn);
+        });
+
+        bubble.appendChild(footerDiv);
+    }
+
+    bubbleContainer.appendChild(bubble);
+    chatContainer.appendChild(bubbleContainer);
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+    scrollChatToBottom();
+    return bubbleContainer;
+}
+
+function renderSources(bubble, sources) {
+    if (sources.length === 0) return;
+
+    let sourceHTML = '<div class="source-citation">';
+    sourceHTML += '<p class="font-semibold mb-1">Sources:</p>';
+    sources.forEach((source, index) => {
+        sourceHTML += `<a href="${source.uri}" target="_blank" class="block text-blue-400 hover:underline truncate" title="${source.title}">
+            ${index + 1}. ${source.title}
+        </a>`;
+    });
+    sourceHTML += '</div>';
+
+    const bubbleContent = bubble.querySelector('.ai-bubble-footer');
+    if (bubbleContent) {
+        bubbleContent.insertAdjacentHTML('afterend', sourceHTML);
+    }
+}
+
+
+// --- API LOGIC ---
+
+/**
+ * Handles the actual API call to Gemini with exponential backoff.
+ */
+async function callGeminiAPI(prompt, thinkingBubble, maxRetries = 5) {
+    const inputElement = document.getElementById('chat-input');
+    const systemInstruction = `You are KurdishGPT, an AI assistant focused on providing helpful, concise, and friendly responses. If the user asks for a simple question, answer directly. If the question involves current events, use the available search tool to ensure accuracy. Respond primarily in English, unless the user explicitly asks for Kurdish.`;
+
+    const payload = {
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        tools: [{ "google_search": {} }], // Enable Google Search Grounding by default
+    };
+
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                // If the response is not ok, attempt to retry (e.g., 429 rate limit)
+                if (response.status === 429 && i < maxRetries - 1) {
+                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue; // Retry the loop
+                }
+                throw new Error(`API call failed with status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+
+            let generatedText = config.MESSAGES.error_api_call_failed;
+            let sources = [];
+
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                generatedText = candidate.content.parts[0].text;
+
+                // Extract grounding sources
+                const groundingMetadata = candidate.groundingMetadata;
+                if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                    sources = groundingMetadata.groundingAttributions
+                        .map(attribution => ({
+                            uri: attribution.web?.uri,
+                            title: attribution.web?.title,
+                        }))
+                        .filter(source => source.uri && source.title);
+                }
+            }
+
+            // Stream the final text and render sources
+            await streamResponse(generatedText, thinkingBubble, sources);
+
+            // Successfully returned, so re-enable input and return
+            inputElement.removeAttribute('disabled');
+            isTyping = false;
+            inputElement.focus();
+            return;
+
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+        }
+    }
+
+    // If all retries fail, display an error message
+    await streamResponse(config.MESSAGES.error_api_call_failed, thinkingBubble, []);
+    inputElement.removeAttribute('disabled');
+    isTyping = false;
+    inputElement.focus();
+}
+
+async function streamResponse(content, bubble, sources) {
+    const contentDiv = bubble.querySelector('.markdown-content');
+    const footerDiv = bubble.querySelector('.ai-bubble-footer');
+
+    // Remove the loading ellipsis and add the typing cursor
+    contentDiv.innerHTML = `<span class="typing-cursor"></span>`;
+
+    // Simulate chunk delivery (for visual effect, although the API call is non-streaming here)
+    let streamedText = '';
+    for (let i = 0; i < content.length; i++) {
+        streamedText += content[i];
+
+        if (i % 10 === 0 || i === content.length - 1) {
+            const htmlContent = converter.makeHtml(streamedText);
+            contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
+            scrollChatToBottom();
+        }
+        await new Promise(resolve => setTimeout(resolve, 5));
+    }
+
+    // Finalize the content
+    contentDiv.innerHTML = converter.makeHtml(content);
+    const cursor = bubble.querySelector('.typing-cursor');
+    if (cursor) cursor.remove();
+    
+    footerDiv.classList.remove('hidden');
+
+    if (sources.length > 0) {
+        renderSources(bubble, sources);
+    }
+
+    chatHistory.push({ role: 'model', content: content, sources: sources });
+
+    scrollChatToBottom();
+}
+
+
+// --- MESSAGE HANDLING ---
+
+function handleSendMessage() {
+    const inputElement = document.getElementById('chat-input');
+    const userPrompt = inputElement.value.trim();
+
+    if (userPrompt === '' || isTyping) return;
+
+    document.getElementById('home-screen').classList.add('hidden');
+    document.getElementById('chat-container-scrollable').classList.remove('hidden');
+
+    chatHistory.push({ role: 'user', content: userPrompt });
+    renderMessage('user', userPrompt);
+
+    inputElement.value = '';
+    checkInputStatus();
+    inputElement.setAttribute('disabled', 'true');
+    isTyping = true;
+
+    const thinkingBubble = renderMessage('model', '', true);
+
+    // Call the actual Gemini API function
+    callGeminiAPI(userPrompt, thinkingBubble);
+}
+
+
+// --- INITIALIZATION ---
+// Execute initialization logic directly since the script tag is the last element in the body.
+const chatInput = document.getElementById('chat-input');
+if (chatInput) {
+    chatInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('send-button').click();
+        }
+    });
+}
+
+// 1. Create icons initially to ensure the header and sidebar load correctly.
+if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+}
+
+// 2. Set the default language and text labels.
+updateUIForLanguage(currentLanguage);
+
+// Expose functions globally so they can be called from index.html onclick attributes
+window.toggleSidebar = toggleSidebar;
+window.clearChat = clearChat;
+window.showFeatureNotAvailable = showFeatureNotAvailable;
+window.toggleLanguage = toggleLanguage;
+window.setPrompt = setPrompt;
+window.openAddToolsModal = openAddToolsModal;
+window.closeAddToolsModal = closeAddToolsModal;
+window.handleToolAction = handleToolAction;
+window.checkInputStatus = checkInputStatus;
+window.handleSendMessage = handleSendMessage;
