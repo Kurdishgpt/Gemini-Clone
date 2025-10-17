@@ -314,10 +314,10 @@
 
             <!-- Right: Send or Mic/Wave Button -->
 
-            <!-- Send Button (FIXED: removed disabled attribute) -->
+            <!-- Send Button -->
             <button id="send-button" onclick="handleSendMessage()"
                     class="flex-shrink-0 p-2 text-blue-400 hover:text-blue-300 transition-colors hidden"
-                    aria-label="Send message">
+                    aria-label="Send message" disabled> <!-- Added disabled back for initial state -->
                 <i data-lucide="send" class="w-6 h-6"></i>
             </button>
 
@@ -401,6 +401,8 @@
             currentUserId = auth.currentUser?.uid || crypto.randomUUID();
             authReady = true;
             console.log('Firebase initialized and authenticated. User ID:', currentUserId);
+            // Ensure input status is checked after auth is ready
+            checkInputStatus();
         } catch (error) {
             console.error('Firebase Auth Error:', error);
             showToast(CONFIG.MESSAGES.error_auth_fail);
@@ -489,7 +491,7 @@
         }
     }
 
-    /** Switches the input bar buttons between Mic/Wave and Send based on input text. */
+    /** Switches the input bar buttons between Mic/Wave and Send based on input text and typing status. */
     function checkInputStatus() {
         const input = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
@@ -497,11 +499,13 @@
 
         const hasText = input.value.trim().length > 0;
         
-        if (hasText && !isTyping) {
+        // Show send button if there is text, not currently typing, and auth is ready
+        if (hasText && !isTyping && authReady) {
             sendButton.classList.remove('hidden');
             sendButton.removeAttribute('disabled');
             micButton.classList.add('hidden');
         } else {
+            // Hide send button and disable it otherwise
             sendButton.classList.add('hidden');
             sendButton.setAttribute('disabled', 'true');
             micButton.classList.remove('hidden');
@@ -513,7 +517,11 @@
         const inputElement = document.getElementById('chat-input');
         const userPrompt = inputElement.value.trim();
 
-        if (userPrompt === '' || isTyping || !authReady) return;
+        if (userPrompt === '' || isTyping || !authReady) {
+             // Log why the send was blocked
+             console.log(`Blocked send: Prompt empty (${userPrompt === ''}), Typing (${isTyping}), Auth not ready (${!authReady})`);
+             return;
+        }
 
         // 1. Hide home screen and show chat container
         document.getElementById('home-screen').classList.add('hidden');
@@ -525,10 +533,10 @@
 
         // 3. Clear input and disable
         inputElement.value = '';
-        checkInputStatus(); // This will disable the send button since input is now empty
         inputElement.setAttribute('disabled', 'true');
         isTyping = true;
-        
+        checkInputStatus(); // Update button immediately (should now be disabled/mic visible)
+
         // 4. Render AI thinking/typing bubble
         const thinkingBubble = renderMessage('model', '', true);
 
@@ -538,13 +546,13 @@
         } catch (error) {
             console.error('Gemini API final error:', error);
             // Stream the error message to the user bubble
-            const errorText = `**Error:** ${error.message}. Please try again later.`;
+            const errorText = `**Error:** ${error.message || CONFIG.MESSAGES.error_api_call_failed}. Please try again later.`;
             streamResponse(errorText, [], thinkingBubble);
         } finally {
-            // 6. Re-enable input
+            // 6. Re-enable input and button (FIX: ensures button state is reset after process)
             inputElement.removeAttribute('disabled');
             isTyping = false;
-            checkInputStatus();
+            checkInputStatus(); // Re-enable send button if text exists, otherwise show mic
             inputElement.focus();
         }
     }
@@ -823,6 +831,4 @@
         initFirebase();
     });
 </script>
-</body>
-</html>
 
