@@ -314,10 +314,10 @@
 
             <!-- Right: Send or Mic/Wave Button -->
 
-            <!-- Send Button (Hidden by default) -->
+            <!-- Send Button (FIXED: removed disabled attribute) -->
             <button id="send-button" onclick="handleSendMessage()"
                     class="flex-shrink-0 p-2 text-blue-400 hover:text-blue-300 transition-colors hidden"
-                    aria-label="Send message" disabled>
+                    aria-label="Send message">
                 <i data-lucide="send" class="w-6 h-6"></i>
             </button>
 
@@ -525,7 +525,7 @@
 
         // 3. Clear input and disable
         inputElement.value = '';
-        checkInputStatus();
+        checkInputStatus(); // This will disable the send button since input is now empty
         inputElement.setAttribute('disabled', 'true');
         isTyping = true;
         
