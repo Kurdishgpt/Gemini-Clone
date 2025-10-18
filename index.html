@@ -28,7 +28,7 @@
             background-color: var(--bg-dark);
             color: var(--text-light);
             overflow-x: hidden;
-            /* **FIXED LAYOUT:** Layout direction is permanently LTR */
+            /* FIXED LAYOUT: Layout direction is permanently LTR */
             direction: ltr; 
         }
 
@@ -355,10 +355,14 @@
     
     // Configuration for Gemini API and Model Parameters
     const GEMINI_CONFIG = {
-        API_KEY: "", 
-        MODEL_NAME: "gemini-2.5-flash-preview-09-2025", 
+        // !!! IMPORTANT: The API Key has been inserted here !!!
+        API_KEY: "AIzaSyCw7nVjXZ9sWu9M8zdwjb5jFVJsV5AXEbg", 
+        MODEL_NAME: "gemini-2.0-flash", // UPDATED by user request
         IMAGE_MODEL_NAME: "imagen-3.0-generate-002",
-        API_BASE_URL: "https://generativelanguage.googleapis.com/v1beta/models/",
+        // UPDATED by user request (v1). The full path will be constructed in the function.
+        API_BASE_URL_TEXT: "https://generativelanguage.googleapis.com/v1", 
+        // Image generation still uses v1beta endpoint structure for Imagen.
+        API_BASE_URL_IMAGE: "https://generativelanguage.googleapis.com/v1beta/models/", 
         MAX_TOKENS: 2048,
         TEMPERATURE: 0.7, 
         ENABLE_SEARCH_GROUNDING: true,
@@ -690,7 +694,8 @@
     async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
         const apiKey = GEMINI_CONFIG.API_KEY; 
         const model = GEMINI_CONFIG.MODEL_NAME;
-        const apiUrl = `${GEMINI_CONFIG.API_BASE_URL}${model}:generateContent?key=${apiKey}`;
+        // Use the new v1 base URL and construct the full path
+        const apiUrl = `${GEMINI_CONFIG.API_BASE_URL_TEXT}/models/${model}:generateContent?key=${apiKey}`;
 
         // Build the chat history for context
         const contents = chatHistory.map(msg => ({
@@ -785,7 +790,8 @@
     async function generateImage(userPrompt, thinkingBubble) {
         const apiKey = GEMINI_CONFIG.API_KEY; 
         const model = GEMINI_CONFIG.IMAGE_MODEL_NAME;
-        const apiUrl = `${GEMINI_CONFIG.API_BASE_URL}${model}:predict?key=${apiKey}`;
+        // Use the dedicated image API base URL
+        const apiUrl = `${GEMINI_CONFIG.API_BASE_URL_IMAGE}${model}:predict?key=${apiKey}`;
         
         // Extract the actual image prompt part
         const imagePrompt = userPrompt.substring(CONFIG.PROMPTS.image.length).trim();
