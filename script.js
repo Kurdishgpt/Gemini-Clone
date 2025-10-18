@@ -7,12 +7,11 @@ let currentLanguage = 'en'; // 'en' for English, 'ckb' for Kurdish Central, 'ar'
 
 // --- CONFIG ---
 const CONFIG = {
-  CLAUDE_API_KEY: config.CLAUDE_API_KEY,
-  API_BASE_URL: `${config.API_BASE_URL}/messages`,
-  MODEL_NAME: config.MODEL_NAME,
+  OPENAI_API_KEY: config.OPENAI_API_KEY,
+  API_BASE_URL: "https://api.openai.com/v1/chat/completions",
+  MODEL_NAME: config.MODEL_NAME || "gpt-4",
   MAX_TOKENS: config.MAX_TOKENS || 2048,
   TEMPERATURE: config.TEMPERATURE || 0.7,
-  CLAUDE_VERSION: "2023-06-01",
   PROMPTS: {
     image: 'Generate a high-quality image of ',
     summarize: 'Summarize the plot of ',
@@ -288,37 +287,40 @@ function renderMessage(role, content, isThinking = false) {
   return wrapper;
 }
 
-// --- CLAUDE API CALL ---
-async function callClaudeAPI(prompt) {
+// --- OPENAI API CALL ---
+async function callOpenAIAPI(prompt) {
   try {
     // Add language instruction to prompt if not English
     const languageInstruction = LANGUAGES[currentLanguage].instruction;
     const userMessage = languageInstruction ? `${languageInstruction}\n\n${prompt}` : prompt;
 
-    // Convert chat history to Claude format
-    const messages = chatHistory.map(msg => ({
-      role: msg.role === "model" ? "assistant" : msg.role,
-      content: msg.content
-    }));
-
-    // Add current user message
-    messages.push({
-      role: "user",
-      content: userMessage
-    });
+    // Convert chat history to OpenAI format
+    const messages = [
+      {
+        role: "system",
+        content: "You are KurdishGPT, a helpful AI assistant focused on Kurdistan and multilingual support. You can respond in English, Kurdish (Sorani), and Arabic."
+      },
+      ...chatHistory.map(msg => ({
+        role: msg.role === "model" ? "assistant" : msg.role,
+        content: msg.content
+      })),
+      {
+        role: "user",
+        content: userMessage
+      }
+    ];
 
     const response = await fetch(CONFIG.API_BASE_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": CONFIG.CLAUDE_API_KEY,
-        "anthropic-version": CONFIG.CLAUDE_VERSION
+        "Authorization": `Bearer ${CONFIG.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
         model: CONFIG.MODEL_NAME,
+        messages: messages,
         max_tokens: CONFIG.MAX_TOKENS,
-        temperature: CONFIG.TEMPERATURE,
-        messages: messages
+        temperature: CONFIG.TEMPERATURE
       }),
     });
 
@@ -329,11 +331,11 @@ async function callClaudeAPI(prompt) {
 
     const data = await response.json();
     return (
-      data?.content?.[0]?.text ||
+      data?.choices?.[0]?.message?.content ||
       CONFIG.MESSAGES.error_api_call_failed
     );
   } catch (err) {
-    console.error("Claude API Error:", err);
+    console.error("OpenAI API Error:", err);
     return "❌ " + err.message;
   }
 }
@@ -358,8 +360,8 @@ async function handleSendMessage() {
   const aiBubble = renderMessage("model", "", true);
   const contentDiv = aiBubble.querySelector(".markdown-content");
 
-  // Call Claude API
-  const reply = await callClaudeAPI(message);
+  // Call OpenAI API
+  const reply = await callOpenAIAPI(message);
 
   // Replace thinking bubble with AI response
   contentDiv.innerHTML = converter.makeHtml(reply);
