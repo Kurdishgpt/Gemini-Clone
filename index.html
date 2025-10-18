@@ -157,11 +157,11 @@
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
 
-        <!-- Center: Get Plus Button -->
+        <!-- Center: Language Toggle Button -->
         <div class="flex-grow flex justify-center">
-            <button onclick="showFeatureNotAvailable('Get Plus')" class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
-                <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
-                Get Plus
+            <button id="language-toggle" onclick="toggleLanguage()" class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
+                <i data-lucide="globe" class="w-4 h-4 mr-2"></i>
+                <span id="current-language">English</span>
             </button>
         </div>
 
@@ -338,6 +338,69 @@
     // --- GLOBAL STATE AND CONFIG ---
     let chatHistory = [];
     let isTyping = false;
+
+    // Current language state
+    let currentLanguage = 'en';
+
+    // Translation dictionary
+    const TRANSLATIONS = {
+        en: {
+            language: 'English',
+            askPrompt: 'Ask KurdishGPT',
+            whatCanIHelp: 'What can I help with?',
+            createImage: 'Create image',
+            summarizeText: 'Summarize text',
+            brainstorm: 'Brainstorm',
+            more: 'More',
+            newChat: 'New chat',
+            library: 'Library',
+            gpts: 'GPTs',
+            recentChats: 'Recent Chats',
+            noRecentChats: 'No recent chats',
+            search: 'Search',
+            camera: 'Camera',
+            photos: 'Photos',
+            files: 'Files',
+            exploreTools: 'Explore tools',
+            thinking: 'Thinking',
+            deepResearch: 'Deep research',
+            webSearch: 'Web search',
+            studyAndLearn: 'Study and learn',
+            visualizeAnything: 'Visualize anything',
+            thinkLonger: 'Think longer for better answers',
+            getDetailedReport: 'Get a detailed report',
+            findRealtimeNews: 'Find real-time news and info',
+            learnNewConcept: 'Learn a new concept'
+        },
+        ckb: {
+            language: 'کوردیی ناوەندی',
+            askPrompt: 'پرسیار لە کوردیشGPT بکە',
+            whatCanIHelp: 'چۆن دەتوانم یارمەتیت بدەم؟',
+            createImage: 'دروستکردنی وێنە',
+            summarizeText: 'پوختەکردنی دەق',
+            brainstorm: 'بیرکردنەوە',
+            more: 'زیاتر',
+            newChat: 'گفتوگۆی نوێ',
+            library: 'کتێبخانە',
+            gpts: 'GPTـەکان',
+            recentChats: 'گفتوگۆی دوایی',
+            noRecentChats: 'گفتوگۆی دوایی نییە',
+            search: 'گەڕان',
+            camera: 'کامێرا',
+            photos: 'وێنەکان',
+            files: 'فایلەکان',
+            exploreTools: 'گەڕان بە ئامرازەکان',
+            thinking: 'بیرکردنەوە',
+            deepResearch: 'لێکۆڵینەوەی قووڵ',
+            webSearch: 'گەڕانی ئینتەرنێت',
+            studyAndLearn: 'خوێندن و فێربوون',
+            visualizeAnything: 'هەموو شتێک بینراو بکە',
+            thinkLonger: 'بیرکردنەوەی درێژتر بۆ وەڵامی باشتر',
+            getDetailedReport: 'ڕاپۆرتێکی ورد وەربگرە',
+            findRealtimeNews: 'هەواڵ و زانیاریی ڕاستەوخۆ بدۆزەرەوە',
+            learnNewConcept: 'چەمکێکی نوێ فێربە'
+        }
+    };
 
     // Configuration for static text and prompts
     const CONFIG = {
@@ -564,6 +627,7 @@ Feel free to try any of the prompt suggestions or type your own question!
 
         // Finalize the content
         contentDiv.innerHTML = converter.makeHtml(content);
+        contentDiv.setAttribute('data-original-text', content);
         // Safely remove the cursor (it might not be there if the content was very short)
         const cursor = bubble.querySelector('.typing-cursor');
         if (cursor) cursor.remove();
@@ -572,6 +636,12 @@ Feel free to try any of the prompt suggestions or type your own question!
 
         // Add to chat history
         chatHistory.push({ role: 'model', content: content });
+        
+        // If current language is Kurdish, translate the message
+        if (currentLanguage === 'ckb') {
+            const translatedContent = await translateText(content, 'ckb');
+            contentDiv.innerHTML = converter.makeHtml(translatedContent);
+        }
 
         scrollChatToBottom();
     }
@@ -600,7 +670,11 @@ Feel free to try any of the prompt suggestions or type your own question!
 
         if (role === 'user') {
             bubble.classList.add('rounded-tr-sm');
-            bubble.innerHTML = `<p class="whitespace-pre-wrap">${content}</p>`;
+            const userParagraph = document.createElement('p');
+            userParagraph.className = 'whitespace-pre-wrap';
+            userParagraph.textContent = content;
+            userParagraph.setAttribute('data-original-text', content);
+            bubble.appendChild(userParagraph);
         } else {
             bubble.classList.add('rounded-tl-sm', 'flex', 'flex-col');
             bubble.style.textAlign = 'left';
@@ -693,6 +767,144 @@ Feel free to try any of the prompt suggestions or type your own question!
         document.execCommand('copy');
         document.body.removeChild(el);
         showToast(CONFIG.MESSAGES.action_copy_success);
+    }
+
+    // --- TRANSLATION FUNCTIONS ---
+    
+    /**
+     * Toggles between English and Kurdish languages
+     */
+    function toggleLanguage() {
+        currentLanguage = currentLanguage === 'en' ? 'ckb' : 'en';
+        updateUILanguage();
+        translateChatMessages();
+    }
+
+    /**
+     * Updates all UI elements with the current language
+     */
+    function updateUILanguage() {
+        const t = TRANSLATIONS[currentLanguage];
+        
+        document.getElementById('current-language').textContent = t.language;
+        
+        document.getElementById('chat-input').placeholder = t.askPrompt;
+        
+        const homeScreen = document.getElementById('home-screen');
+        if (homeScreen) {
+            const heading = homeScreen.querySelector('h1');
+            if (heading) heading.textContent = t.whatCanIHelp;
+        }
+        
+        const suggestionButtons = document.querySelectorAll('#suggestion-buttons button');
+        if (suggestionButtons.length >= 4) {
+            suggestionButtons[0].querySelector('span').textContent = t.createImage;
+            suggestionButtons[1].querySelector('span').textContent = t.summarizeText;
+            suggestionButtons[2].querySelector('span').textContent = t.brainstorm;
+            suggestionButtons[3].querySelector('span').textContent = t.more;
+        }
+        
+        const sidebarLinks = document.querySelectorAll('#sidebar-menu a span');
+        if (sidebarLinks.length >= 3) {
+            sidebarLinks[0].textContent = t.newChat;
+            sidebarLinks[1].textContent = t.library;
+            sidebarLinks[2].textContent = t.gpts;
+        }
+        
+        const recentChatsHeading = document.querySelector('#sidebar-menu h3');
+        if (recentChatsHeading) recentChatsHeading.textContent = t.recentChats;
+        
+        const noRecentChats = document.querySelector('#sidebar-menu .text-gray-600');
+        if (noRecentChats) noRecentChats.textContent = t.noRecentChats;
+        
+        const searchInput = document.querySelector('#sidebar-menu input[type=\"text\"]');
+        if (searchInput) searchInput.placeholder = t.search;
+        
+        const toolsModal = document.getElementById('add-tools-modal');
+        if (toolsModal) {
+            const toolButtons = toolsModal.querySelectorAll('button');
+            toolButtons.forEach(btn => {
+                const text = btn.querySelector('p');
+                if (text) {
+                    const originalText = text.textContent;
+                    if (originalText === 'Camera' || originalText === t.camera) text.textContent = t.camera;
+                    else if (originalText === 'Photos' || originalText === t.photos) text.textContent = t.photos;
+                    else if (originalText === 'Files' || originalText === t.files) text.textContent = t.files;
+                    else if (originalText === 'Explore tools' || originalText === t.exploreTools) text.textContent = t.exploreTools;
+                    else if (originalText === 'Create image' || originalText === t.createImage) text.textContent = t.createImage;
+                    else if (originalText === 'Thinking' || originalText === t.thinking) text.textContent = t.thinking;
+                    else if (originalText === 'Deep research' || originalText === t.deepResearch) text.textContent = t.deepResearch;
+                    else if (originalText === 'Web search' || originalText === t.webSearch) text.textContent = t.webSearch;
+                    else if (originalText === 'Study and learn' || originalText === t.studyAndLearn) text.textContent = t.studyAndLearn;
+                }
+                
+                const desc = btn.querySelector('.text-xs.text-gray-400');
+                if (desc) {
+                    const originalDesc = desc.textContent;
+                    if (originalDesc === 'Visualize anything' || originalDesc === t.visualizeAnything) desc.textContent = t.visualizeAnything;
+                    else if (originalDesc === 'Think longer for better answers' || originalDesc === t.thinkLonger) desc.textContent = t.thinkLonger;
+                    else if (originalDesc === 'Get a detailed report' || originalDesc === t.getDetailedReport) desc.textContent = t.getDetailedReport;
+                    else if (originalDesc === 'Find real-time news and info' || originalDesc === t.findRealtimeNews) desc.textContent = t.findRealtimeNews;
+                    else if (originalDesc === 'Learn a new concept' || originalDesc === t.learnNewConcept) desc.textContent = t.learnNewConcept;
+                }
+            });
+        }
+        
+        lucide.createIcons();
+    }
+
+    /**
+     * Translates all chat messages using Google Translate API
+     */
+    async function translateChatMessages() {
+        const chatContainer = document.getElementById('chat-container-scrollable');
+        const userMessages = chatContainer.querySelectorAll('.whitespace-pre-wrap[data-original-text]');
+        const aiMessages = chatContainer.querySelectorAll('.markdown-content[data-original-text]');
+        
+        for (const messageElement of userMessages) {
+            const originalText = messageElement.getAttribute('data-original-text');
+            
+            if (currentLanguage === 'ckb') {
+                const translatedText = await translateText(originalText, 'ckb');
+                messageElement.textContent = translatedText;
+            } else {
+                messageElement.textContent = originalText;
+            }
+        }
+        
+        for (const messageElement of aiMessages) {
+            const originalText = messageElement.getAttribute('data-original-text');
+            
+            if (currentLanguage === 'ckb') {
+                const translatedText = await translateText(originalText, 'ckb');
+                messageElement.innerHTML = converter.makeHtml(translatedText);
+            } else {
+                messageElement.innerHTML = converter.makeHtml(originalText);
+            }
+        }
+    }
+
+    /**
+     * Translates text using Google Translate API
+     * @param {string} text - Text to translate
+     * @param {string} targetLang - Target language code ('ckb' for Kurdish)
+     * @returns {Promise<string>} - Translated text
+     */
+    async function translateText(text, targetLang) {
+        if (!text || text.trim() === '') return text;
+        
+        try {
+            const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
+            const data = await response.json();
+            
+            if (data && data[0]) {
+                return data[0].map(item => item[0]).join('');
+            }
+            return text;
+        } catch (error) {
+            console.error('Translation error:', error);
+            return text;
+        }
     }
 
     // --- INITIALIZATION ---
