@@ -7,11 +7,9 @@ let currentLanguage = 'en'; // 'en' for English, 'ckb' for Kurdish Central, 'ar'
 
 // --- CONFIG ---
 const CONFIG = {
-  OPENAI_API_KEY: config.OPENAI_API_KEY,
-  API_BASE_URL: "https://api.openai.com/v1/chat/completions",
-  MODEL_NAME: config.MODEL_NAME || "gpt-4",
-  MAX_TOKENS: config.MAX_TOKENS || 2048,
-  TEMPERATURE: config.TEMPERATURE || 0.7,
+  GEMINI_API_KEY: config.GEMINI_API_KEY,
+  API_BASE_URL: config.API_BASE_URL,
+  MODEL_NAME: config.MODEL_NAME,
   PROMPTS: {
     image: 'Generate a high-quality image of ',
     summarize: 'Summarize the plot of ',
@@ -36,9 +34,9 @@ const CONFIG = {
 
 // Language configurations with full UI translations
 const LANGUAGES = {
-  en: {
-    name: 'English',
-    code: 'en',
+  en: { 
+    name: 'English', 
+    code: 'en', 
     instruction: '',
     translations: {
       // Header
@@ -78,9 +76,9 @@ const LANGUAGES = {
       languageChanged: 'Language changed to'
     }
   },
-  ckb: {
-    name: 'کوردیی ناوەندی',
-    code: 'ckb',
+  ckb: { 
+    name: 'کوردیی ناوەندی', 
+    code: 'ckb', 
     instruction: 'Please respond in Kurdish (Central Kurdish/Sorani):',
     translations: {
       // Header
@@ -120,9 +118,9 @@ const LANGUAGES = {
       languageChanged: 'زمان گۆڕدرا بۆ'
     }
   },
-  ar: {
-    name: 'العربية',
-    code: 'ar',
+  ar: { 
+    name: 'العربية', 
+    code: 'ar', 
     instruction: 'Please respond in Arabic:',
     translations: {
       // Header
@@ -287,55 +285,31 @@ function renderMessage(role, content, isThinking = false) {
   return wrapper;
 }
 
-// --- OPENAI API CALL ---
-async function callOpenAIAPI(prompt) {
+// --- GEMINI API CALL ---
+async function callGeminiAPI(prompt) {
   try {
     // Add language instruction to prompt if not English
     const languageInstruction = LANGUAGES[currentLanguage].instruction;
-    const userMessage = languageInstruction ? `${languageInstruction}\n\n${prompt}` : prompt;
-
-    // Convert chat history to OpenAI format
-    const messages = [
+    const fullPrompt = languageInstruction ? `${languageInstruction}\n\n${prompt}` : prompt;
+    
+    const response = await fetch(
+      `${CONFIG.API_BASE_URL}/models/${CONFIG.MODEL_NAME}:generateContent?key=${CONFIG.GEMINI_API_KEY}`,
       {
-        role: "system",
-        content: "You are KurdishGPT, a helpful AI assistant focused on Kurdistan and multilingual support. You can respond in English, Kurdish (Sorani), and Arabic."
-      },
-      ...chatHistory.map(msg => ({
-        role: msg.role === "model" ? "assistant" : msg.role,
-        content: msg.content
-      })),
-      {
-        role: "user",
-        content: userMessage
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+        }),
       }
-    ];
+    );
 
-    const response = await fetch(CONFIG.API_BASE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${CONFIG.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: CONFIG.MODEL_NAME,
-        messages: messages,
-        max_tokens: CONFIG.MAX_TOKENS,
-        temperature: CONFIG.TEMPERATURE
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`API request failed: ${errorData.error?.message || response.statusText}`);
-    }
-
+    if (!response.ok) throw new Error("API request failed");
     const data = await response.json();
     return (
-      data?.choices?.[0]?.message?.content ||
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       CONFIG.MESSAGES.error_api_call_failed
     );
   } catch (err) {
-    console.error("OpenAI API Error:", err);
     return "❌ " + err.message;
   }
 }
@@ -360,8 +334,8 @@ async function handleSendMessage() {
   const aiBubble = renderMessage("model", "", true);
   const contentDiv = aiBubble.querySelector(".markdown-content");
 
-  // Call OpenAI API
-  const reply = await callOpenAIAPI(message);
+  // Call Gemini API
+  const reply = await callGeminiAPI(message);
 
   // Replace thinking bubble with AI response
   contentDiv.innerHTML = converter.makeHtml(reply);
@@ -434,7 +408,7 @@ function handleToolAction(tool, prompt = '') {
 
 function updateUILanguage() {
   const t = LANGUAGES[currentLanguage].translations;
-
+  
   const elements = {
     'language-label': t.languageButton,
     'chat-input': { placeholder: t.inputPlaceholder },
@@ -464,7 +438,7 @@ function updateUILanguage() {
     'tool-study-desc': t.studyLearnDesc,
     'tool-explore': t.exploreTools
   };
-
+  
   for (const [id, value] of Object.entries(elements)) {
     const element = document.getElementById(id);
     if (element) {
@@ -475,7 +449,7 @@ function updateUILanguage() {
       }
     }
   }
-
+  
   if (currentLanguage === 'ar') {
     document.body.style.direction = 'rtl';
   } else {
@@ -488,9 +462,9 @@ function toggleLanguage() {
   const currentIndex = languageOrder.indexOf(currentLanguage);
   const nextIndex = (currentIndex + 1) % languageOrder.length;
   currentLanguage = languageOrder[nextIndex];
-
+  
   updateUILanguage();
-
+  
   const t = LANGUAGES[currentLanguage].translations;
   showToast(`${t.languageChanged} ${LANGUAGES[currentLanguage].name}`);
 }
