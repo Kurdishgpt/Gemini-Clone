@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KurdishGPT Localized Chat Interface</title>
 
+    <!-- External Libraries (Essential) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -361,7 +362,6 @@
     // Model and API settings
     const config = {
         // The API Key MUST be an empty string for the runtime to inject it securely.
-        // The key you provided will be used automatically by the environment.
         apiKey: "", 
         // Using the preferred model for text generation.
         modelName: "gemini-2.5-flash-preview-09-2025", 
@@ -395,7 +395,7 @@
             action_like: 'Thanks for the feedback!',
             action_dislike: 'Thanks for the feedback. We will improve.',
             action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
-            error_api_call_failed: 'Failed to get a response from the API. Please check the console for details.',
+            error_api_call_failed: 'Failed to get a response from the API. Check the console for "HTTP error" details.',
             error_api_blocked: 'The response was blocked due to safety settings.',
             error_image_failed: 'Failed to generate image. The prompt might be too complex or blocked by safety filters.',
             image_success: 'Here is the image I generated for you:',
@@ -510,7 +510,7 @@
 
 
     // #################################################
-    // --- 2. SCRIPT LOGIC (Your intended script.js) ---
+    // --- 2. JAVASCRIPT LOGIC ---
     // #################################################
 
     // --- LOCALIZATION & UI FIXES ---
@@ -561,7 +561,7 @@
         showToast(toastMessage);
     }
     
-    // --- RECENT CHATS IMPLEMENTATION ---
+    // --- RECENT CHATS IMPLEMENTATION (Uses localStorage) ---
 
     /** Loads and renders recent chats from local storage. */
     function loadRecentChats() {
@@ -576,7 +576,6 @@
             noChats.className = 'text-xs text-gray-600 px-3 py-1';
             noChats.setAttribute('data-l10n-key', 'no_recent_chats');
             chatListDiv.appendChild(noChats);
-            // Re-run localization to ensure "No recent chats" is correct
             updateUIForLanguage(); 
         } else {
             chats.forEach((chat) => {
@@ -586,7 +585,6 @@
                 link.textContent = chat.title;
                 link.onclick = (e) => {
                     e.preventDefault();
-                    // In a full app, this would load the chat by its ID/history.
                     showFeatureNotAvailable(`Loading Chat: "${chat.title}"`);
                     toggleSidebar();
                 };
@@ -597,7 +595,6 @@
 
     /** Saves the current chat (if new or updated) to local storage. */
     function saveCurrentChat() {
-        // Ensure the chat has at least one user message to derive a title
         const firstUserMessage = chatHistory.find(msg => msg.role === 'user');
         if (!firstUserMessage) return;
 
@@ -607,10 +604,8 @@
         const chatsJSON = localStorage.getItem(CONFIG.STORAGE_KEY.RECENT_CHATS);
         let chats = chatsJSON ? JSON.parse(chatsJSON) : [];
 
-        // Check if a chat with this title already exists (and update its position to the top)
+        // Update position to the top or add new
         chats = chats.filter(chat => chat.title !== chatTitle);
-
-        // Add new chat to the top
         const newChatEntry = { id: Date.now(), title: chatTitle };
         chats.unshift(newChatEntry);
 
@@ -644,7 +639,6 @@
 
     /** Clears the chat history and resets the view to the home screen. */
     function clearChat(shouldSave) {
-        // Automatically save the current chat if it has history and a title.
         if (shouldSave && chatHistory.length > 1) {
             saveCurrentChat();
         }
@@ -699,13 +693,12 @@
 
     // --- API HANDLERS ---
 
-    /** Calls the Gemini API for TEXT generation with exponential backoff. */
+    /** Calls the Gemini API for TEXT generation with exponential backoff (critical fix). */
     async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
-        // The key is an empty string as required; the environment provides it.
         const apiKey = config.apiKey; 
         const apiUrl = `${config.apiBaseUrlText}/models/${config.modelName}:generateContent?key=${apiKey}`;
 
-        // Build the chat history for context
+        // Build the chat history for context (last 10 messages)
         const contents = chatHistory.map(msg => ({
             role: msg.role === 'model' ? 'model' : 'user', 
             parts: [{ text: msg.content }]
@@ -727,13 +720,13 @@
         let attempt = 0;
         let finalResult = null;
         let success = false;
+        let lastError = null;
 
         while (attempt < maxRetries && !success) {
             try {
                 if (attempt > 0) {
                     // Exponential backoff: 1s, 2s, 4s
                     const delay = Math.pow(2, attempt) * 1000;
-                    // console.log(`[Attempt ${attempt + 1}] Retrying API call in ${delay / 1000}s...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
 
@@ -745,8 +738,7 @@
                 
                 if (!response.ok) {
                     const errorDetails = await response.text();
-                    console.error(`[Attempt ${attempt + 1}] Gemini Text API HTTP error! Status: ${response.status}`, errorDetails);
-                    // Throw error to trigger retry
+                    lastError = `Status: ${response.status}. Details: ${errorDetails.substring(0, 100)}...`;
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -754,16 +746,20 @@
                 success = true;
 
             } catch (error) {
-                // Log and continue to next attempt if retries remain
                 attempt++;
+                if (error.message.startsWith('HTTP error!')) {
+                    // console.error(`[Attempt ${attempt}/${maxRetries}] Failed with HTTP error: ${lastError}`);
+                } else {
+                    // console.error(`[Attempt ${attempt}/${maxRetries}] Failed with Network/Fetch error:`, error);
+                }
             }
         }
 
         if (!success || !finalResult) {
-            // Handle failure after all retries
+            // Handle critical failure after all retries
             const contentDiv = thinkingBubble.querySelector('.markdown-content');
             contentDiv.innerHTML = `<p class="text-red-400">${CONFIG.MESSAGES.error_api_call_failed}</p>`;
-            console.error("Critical: Failed all attempts to call Gemini API.");
+            console.error("CRITICAL API FAILURE: Failed all attempts to call Gemini Text API.", lastError);
             enableInput();
             return;
         }
@@ -804,18 +800,15 @@
             saveCurrentChat();
         }
 
-        // Re-enable input
         enableInput();
     }
 
 
     /** Calls the Imagen API for IMAGE generation. */
     async function generateImage(userPrompt, thinkingBubble) {
-        // The key is an empty string as required; the environment provides it.
         const apiKey = config.apiKey; 
         const apiUrl = `${config.apiBaseUrlImage}${config.imageModelName}:predict?key=${apiKey}`;
         
-        // Extract the actual image prompt part
         const imagePrompt = userPrompt.substring(CONFIG.PROMPTS.image.length).trim();
 
         const payload = { 
@@ -838,7 +831,6 @@
         while (attempt < maxRetries && !success) {
             try {
                 if (attempt > 0) {
-                    // Exponential backoff: 1s, 2s, 4s
                     const delay = Math.pow(2, attempt) * 1000;
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
@@ -850,8 +842,6 @@
                 });
                 
                 if (!response.ok) {
-                    const errorDetails = await response.text();
-                    console.error(`[Attempt ${attempt + 1}] Imagen API HTTP error! Status: ${response.status}`, errorDetails);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -859,12 +849,10 @@
                 success = true;
 
             } catch (error) {
-                // Log and continue to next attempt if retries remain
                 attempt++;
             }
         }
 
-        // Remove the old content and replace with image or error
         contentDiv.innerHTML = ''; 
 
         const prediction = finalResult?.predictions?.[0];
@@ -873,15 +861,12 @@
         if (base64Data) {
             const imageUrl = `data:image/png;base64,${base64Data}`;
             renderImageResult(imageUrl, thinkingBubble, imagePrompt);
-            // Add a mock text response to history for context
             chatHistory.push({ role: 'model', content: `[Generated image for: "${imagePrompt}"]` }); 
         } else {
             contentDiv.innerHTML = `<p class="text-red-400">${CONFIG.MESSAGES.error_image_failed}</p>`;
-            // Add failure message to history
             chatHistory.push({ role: 'model', content: `[Image generation failed for: "${imagePrompt}"]` }); 
         }
 
-        // Save chat if this is the first response
         if (chatHistory.length === 2) {
             saveCurrentChat();
         }
@@ -947,7 +932,7 @@
         const totalChunks = content.length;
         let streamedText = '';
 
-        // Clear loading ellipsis and insert the cursor
+        // Clear loading icon and insert the cursor
         contentDiv.innerHTML = `<span class="typing-cursor"></span>`;
 
         // Simulate chunk delivery
@@ -959,7 +944,8 @@
                 contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
                 scrollChatToBottom();
             }
-            await new Promise(resolve => setTimeout(resolve, 5));
+            // Control streaming speed for simulation
+            await new Promise(resolve => setTimeout(resolve, 5)); 
         }
 
         // Finalize the content
@@ -1011,7 +997,6 @@
         const chatContainer = document.getElementById('chat-container-scrollable');
 
         const bubbleContainer = document.createElement('div');
-        // Layout is always LTR, so user justification is fixed to end/right
         bubbleContainer.className = `flex mb-4 max-w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
         
         const bubble = document.createElement('div');
@@ -1026,8 +1011,7 @@
             bubble.classList.add('rounded-tl-sm', 'flex', 'flex-col');
             
             const contentDiv = document.createElement('div');
-            // Important: Use LTR direction for Markdown content, as it's designed that way, 
-            // but align the text correctly for Kurdish (RTL language)
+            // Set text direction based on selected language for correct display
             const textDirection = (currentLanguage === 'ku') ? 'rtl' : 'ltr';
             contentDiv.style.direction = textDirection;
 
