@@ -4,6 +4,36 @@ import config from "./config.js";
 let chatHistory = [];
 let isTyping = false;
 
+// --- CONFIG ---
+const CONFIG = {
+  GEMINI_API_KEY: config.GEMINI_API_KEY,
+  API_BASE_URL: config.API_BASE_URL,
+  MODEL_NAME: config.MODEL_NAME,
+  PROMPTS: {
+    image: 'Generate a high-quality image of ',
+    summarize: 'Summarize the plot of ',
+    brainstorm: 'Brainstorm 5 ideas for a startup in Erbil.',
+    more: 'What are some fun facts about the Kurdistan Region of Iraq?',
+    thinking: 'Analyze the historical significance of the Medes.',
+    research: 'Write a deep report on the future of Kurdish language technology.',
+    search: 'What is the current price of oil?',
+    study: 'Explain the concept of neural networks in simple terms.',
+  },
+  MESSAGES: {
+    action_copy_success: 'Content copied to clipboard!',
+    action_copied: 'Copied.',
+    action_tts: 'Text-to-Speech is playing the response now.',
+    action_regenerate: 'Regenerating response...',
+    action_like: 'Thanks for the feedback!',
+    action_dislike: 'Thanks for the feedback. We will improve.',
+    action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
+    error_api_call_failed: 'Failed to get a response from the API.',
+  }
+};
+
+// Make CONFIG globally accessible
+window.CONFIG = CONFIG;
+
 // --- MARKDOWN SETUP ---
 const converter = new showdown.Converter({
   tables: true,
@@ -188,8 +218,69 @@ async function handleSendMessage() {
 function clearChat() {
   chatHistory = [];
   document.getElementById("chat-container-scrollable").innerHTML = "";
+  document.getElementById("chat-container-scrollable").classList.add("hidden");
   document.getElementById("home-screen").classList.remove("hidden");
+  document.getElementById("chat-input").value = "";
+  checkInputStatus();
 }
+
+// --- UI FUNCTIONS ---
+function showFeatureNotAvailable(featureName) {
+  const message = CONFIG.MESSAGES.action_feature_not_available(featureName);
+  showToast(message);
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar-menu');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const isOpen = sidebar.classList.contains('translate-x-0');
+
+  if (isOpen) {
+    sidebar.classList.remove('translate-x-0');
+    sidebar.classList.add('-translate-x-full');
+    backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+    backdrop.classList.add('opacity-0', 'pointer-events-none');
+  } else {
+    sidebar.classList.remove('-translate-x-full');
+    sidebar.classList.add('translate-x-0');
+    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+    backdrop.classList.add('opacity-100', 'pointer-events-auto');
+  }
+}
+
+function setPrompt(prompt) {
+  document.getElementById('chat-input').value = prompt;
+  document.getElementById('chat-input').focus();
+  checkInputStatus();
+}
+
+function openAddToolsModal() {
+  document.getElementById('add-tools-modal').classList.remove('hidden');
+}
+
+function closeAddToolsModal() {
+  document.getElementById('add-tools-modal').classList.add('hidden');
+}
+
+function handleToolAction(tool, prompt = '') {
+  closeAddToolsModal();
+  if (prompt) {
+    setPrompt(prompt);
+  } else {
+    showFeatureNotAvailable(tool);
+  }
+}
+
+// Make functions globally accessible
+window.clearChat = clearChat;
+window.showFeatureNotAvailable = showFeatureNotAvailable;
+window.toggleSidebar = toggleSidebar;
+window.setPrompt = setPrompt;
+window.openAddToolsModal = openAddToolsModal;
+window.closeAddToolsModal = closeAddToolsModal;
+window.handleToolAction = handleToolAction;
+window.handleSendMessage = handleSendMessage;
+window.checkInputStatus = checkInputStatus;
 
 // --- INIT ---
 document.addEventListener("DOMContentLoaded", () => {
