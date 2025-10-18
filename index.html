@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KurdishGPT Localized Chat Interface</title>
+    <title>KurdishGPT Single-File Chat App</title>
 
     <!-- External Libraries (Essential) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -349,6 +349,11 @@
 
 
 <script>
+    // #################################################
+    // --- JAVASCRIPT LOGIC START ---
+    // #################################################
+
+
     // --- GLOBAL STATE ---
     let chatHistory = [];
     let isTyping = false;
@@ -356,12 +361,13 @@
     
     
     // #################################################
-    // --- 1. CONFIGURATION ---
+    // --- 1. CONFIGURATION (Gemini API Key Setup) ---
     // #################################################
 
     // Model and API settings
     const config = {
-        // The API Key MUST be an empty string for the runtime to inject it securely.
+        // IMPORTANT: The API Key MUST be an empty string ("") here.
+        // The secure execution environment automatically injects the user's actual key at runtime.
         apiKey: "", 
         // Using the preferred model for text generation.
         modelName: "gemini-2.5-flash-preview-09-2025", 
@@ -693,8 +699,9 @@
 
     // --- API HANDLERS ---
 
-    /** Calls the Gemini API for TEXT generation with exponential backoff (critical fix). */
+    /** Calls the Gemini API for TEXT generation with exponential backoff. */
     async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
+        // API key is correctly defined here as an empty string, relying on runtime injection.
         const apiKey = config.apiKey; 
         const apiUrl = `${config.apiBaseUrlText}/models/${config.modelName}:generateContent?key=${apiKey}`;
 
@@ -747,11 +754,7 @@
 
             } catch (error) {
                 attempt++;
-                if (error.message.startsWith('HTTP error!')) {
-                    // console.error(`[Attempt ${attempt}/${maxRetries}] Failed with HTTP error: ${lastError}`);
-                } else {
-                    // console.error(`[Attempt ${attempt}/${maxRetries}] Failed with Network/Fetch error:`, error);
-                }
+                // console.error logs removed to prevent spamming the console during backoff
             }
         }
 
@@ -806,6 +809,7 @@
 
     /** Calls the Imagen API for IMAGE generation. */
     async function generateImage(userPrompt, thinkingBubble) {
+        // API key is correctly defined here as an empty string, relying on runtime injection.
         const apiKey = config.apiKey; 
         const apiUrl = `${config.apiBaseUrlImage}${config.imageModelName}:predict?key=${apiKey}`;
         
@@ -1119,6 +1123,10 @@
         // 4. Initialize Lucide icons
         lucide.createIcons();
     });
+
+    // #################################################
+    // --- JAVASCRIPT LOGIC END ---
+    // #################################################
 </script>
 </body>
 </html>
