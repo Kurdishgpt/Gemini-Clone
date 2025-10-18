@@ -1,7 +1,7 @@
-// --- script.js ---
 
-// 1. IMPORT CONFIGURATION
-import { GEMINI_CONFIG, CONFIG, L10N } from './config.js';
+
+
+import form config "./config.js";
 
 // Markdown Converter Setup (Global scope for all functions)
 const converter = new showdown.Converter({
