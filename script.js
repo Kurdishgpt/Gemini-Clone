@@ -7,7 +7,7 @@ let currentLanguage = 'en'; // 'en' for English, 'ckb' for Kurdish Central, 'ar'
 
 // --- CONFIG ---
 const CONFIG = {
-  GEMINI_API_KEY: config.GEMINI_API_KEY,
+  CLAUDE_API_KEY: config.CLAUDE_API_KEY,
   API_BASE_URL: config.API_BASE_URL,
   MODEL_NAME: config.MODEL_NAME,
   PROMPTS: {
@@ -32,32 +32,26 @@ const CONFIG = {
   }
 };
 
-// Language configurations with full UI translations
+// --- LANGUAGE SUPPORT ---
 const LANGUAGES = {
   en: { 
     name: 'English', 
     code: 'en', 
     instruction: '',
     translations: {
-      // Header
       languageButton: 'English',
-      // Input
       inputPlaceholder: 'Ask KurdishGPT',
-      // Home screen
       homeTitle: 'What can I help with?',
-      // Suggestion buttons
       createImage: 'Create image',
       summarizeText: 'Summarize text',
       brainstorm: 'Brainstorm',
       more: 'More',
-      // Sidebar
       search: 'Search',
       newChat: 'New chat',
       library: 'Library',
       gpts: 'GPTs',
       recentChats: 'Recent Chats',
       noRecentChats: 'No recent chats',
-      // Tools modal
       camera: 'Camera',
       photos: 'Photos',
       files: 'Files',
@@ -72,7 +66,6 @@ const LANGUAGES = {
       studyLearn: 'Study and learn',
       studyLearnDesc: 'Learn a new concept',
       exploreTools: 'Explore tools',
-      // Messages
       languageChanged: 'Language changed to'
     }
   },
@@ -81,25 +74,19 @@ const LANGUAGES = {
     code: 'ckb', 
     instruction: 'Please respond in Kurdish (Central Kurdish/Sorani):',
     translations: {
-      // Header
       languageButton: 'کوردیی ناوەندی',
-      // Input
       inputPlaceholder: 'پرسیار لە KurdishGPT بکە',
-      // Home screen
       homeTitle: 'چۆن یارمەتیت بدەم؟',
-      // Suggestion buttons
       createImage: 'دروستکردنی وێنە',
       summarizeText: 'پوختەکردنی دەق',
       brainstorm: 'بیرکردنەوە',
       more: 'زیاتر',
-      // Sidebar
       search: 'گەڕان',
       newChat: 'گفتوگۆی نوێ',
       library: 'کتێبخانە',
       gpts: 'GPTs',
       recentChats: 'گفتوگۆی ئەم دواییە',
       noRecentChats: 'گفتوگۆی ئەم دواییە نییە',
-      // Tools modal
       camera: 'کامێرا',
       photos: 'وێنەکان',
       files: 'فایلەکان',
@@ -114,7 +101,6 @@ const LANGUAGES = {
       studyLearn: 'خوێندن و فێربوون',
       studyLearnDesc: 'چەمکێکی نوێ فێربە',
       exploreTools: 'گەڕان لە ئامرازەکان',
-      // Messages
       languageChanged: 'زمان گۆڕدرا بۆ'
     }
   },
@@ -123,25 +109,19 @@ const LANGUAGES = {
     code: 'ar', 
     instruction: 'Please respond in Arabic:',
     translations: {
-      // Header
       languageButton: 'العربية',
-      // Input
       inputPlaceholder: 'اسأل KurdishGPT',
-      // Home screen
       homeTitle: 'كيف يمكنني المساعدة؟',
-      // Suggestion buttons
       createImage: 'إنشاء صورة',
       summarizeText: 'تلخيص النص',
       brainstorm: 'عصف ذهني',
       more: 'المزيد',
-      // Sidebar
       search: 'بحث',
       newChat: 'محادثة جديدة',
       library: 'المكتبة',
       gpts: 'GPTs',
       recentChats: 'المحادثات الأخيرة',
       noRecentChats: 'لا توجد محادثات أخيرة',
-      // Tools modal
       camera: 'كاميرا',
       photos: 'الصور',
       files: 'الملفات',
@@ -156,7 +136,6 @@ const LANGUAGES = {
       studyLearn: 'الدراسة والتعلم',
       studyLearnDesc: 'تعلم مفهوماً جديداً',
       exploreTools: 'استكشف الأدوات',
-      // Messages
       languageChanged: 'تم تغيير اللغة إلى'
     }
   }
@@ -249,22 +228,10 @@ function renderMessage(role, content, isThinking = false) {
 
     const actions = [
       { icon: "copy", fn: () => copyToClipboard(content) },
-      {
-        icon: "volume-2",
-        fn: () => showToast(CONFIG.MESSAGES.action_tts),
-      },
-      {
-        icon: "rotate-cw",
-        fn: () => showToast(CONFIG.MESSAGES.action_regenerate),
-      },
-      {
-        icon: "thumbs-up",
-        fn: () => showToast(CONFIG.MESSAGES.action_like),
-      },
-      {
-        icon: "thumbs-down",
-        fn: () => showToast(CONFIG.MESSAGES.action_dislike),
-      },
+      { icon: "volume-2", fn: () => showToast(CONFIG.MESSAGES.action_tts) },
+      { icon: "rotate-cw", fn: () => showToast(CONFIG.MESSAGES.action_regenerate) },
+      { icon: "thumbs-up", fn: () => showToast(CONFIG.MESSAGES.action_like) },
+      { icon: "thumbs-down", fn: () => showToast(CONFIG.MESSAGES.action_dislike) },
     ];
 
     actions.forEach(({ icon, fn }) => {
@@ -285,30 +252,32 @@ function renderMessage(role, content, isThinking = false) {
   return wrapper;
 }
 
-// --- GEMINI API CALL ---
-async function callGeminiAPI(prompt) {
+// --- CLAUDE API CALL ---
+async function callClaudeAPI(prompt) {
   try {
-    // Add language instruction to prompt if not English
     const languageInstruction = LANGUAGES[currentLanguage].instruction;
     const fullPrompt = languageInstruction ? `${languageInstruction}\n\n${prompt}` : prompt;
-    
-    const response = await fetch(
-      `${CONFIG.API_BASE_URL}/models/${CONFIG.MODEL_NAME}:generateContent?key=${CONFIG.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-        }),
-      }
-    );
+
+    const response = await fetch(`${CONFIG.API_BASE_URL}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": CONFIG.CLAUDE_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: CONFIG.MODEL_NAME,
+        max_tokens: CONFIG.MAX_TOKENS,
+        temperature: CONFIG.TEMPERATURE,
+        messages: [
+          { role: "user", content: fullPrompt }
+        ],
+      }),
+    });
 
     if (!response.ok) throw new Error("API request failed");
     const data = await response.json();
-    return (
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      CONFIG.MESSAGES.error_api_call_failed
-    );
+    return data?.content?.[0]?.text || CONFIG.MESSAGES.error_api_call_failed;
   } catch (err) {
     return "❌ " + err.message;
   }
@@ -334,8 +303,8 @@ async function handleSendMessage() {
   const aiBubble = renderMessage("model", "", true);
   const contentDiv = aiBubble.querySelector(".markdown-content");
 
-  // Call Gemini API
-  const reply = await callGeminiAPI(message);
+  // Call Claude API
+  const reply = await callClaudeAPI(message);
 
   // Replace thinking bubble with AI response
   contentDiv.innerHTML = converter.makeHtml(reply);
@@ -359,138 +328,36 @@ function clearChat() {
   checkInputStatus();
 }
 
-// --- UI FUNCTIONS ---
-function showFeatureNotAvailable(featureName) {
-  const message = CONFIG.MESSAGES.action_feature_not_available(featureName);
-  showToast(message);
-}
-
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar-menu');
-  const backdrop = document.getElementById('sidebar-backdrop');
-  const isOpen = sidebar.classList.contains('translate-x-0');
-
-  if (isOpen) {
-    sidebar.classList.remove('translate-x-0');
-    sidebar.classList.add('-translate-x-full');
-    backdrop.classList.remove('opacity-100', 'pointer-events-auto');
-    backdrop.classList.add('opacity-0', 'pointer-events-none');
-  } else {
-    sidebar.classList.remove('-translate-x-full');
-    sidebar.classList.add('translate-x-0');
-    backdrop.classList.remove('opacity-0', 'pointer-events-none');
-    backdrop.classList.add('opacity-100', 'pointer-events-auto');
-  }
-}
-
-function setPrompt(prompt) {
-  document.getElementById('chat-input').value = prompt;
-  document.getElementById('chat-input').focus();
-  checkInputStatus();
-}
-
-function openAddToolsModal() {
-  document.getElementById('add-tools-modal').classList.remove('hidden');
-}
-
-function closeAddToolsModal() {
-  document.getElementById('add-tools-modal').classList.add('hidden');
-}
-
-function handleToolAction(tool, prompt = '') {
-  closeAddToolsModal();
-  if (prompt) {
-    setPrompt(prompt);
-  } else {
-    showFeatureNotAvailable(tool);
-  }
-}
-
-function updateUILanguage() {
-  const t = LANGUAGES[currentLanguage].translations;
-  
-  const elements = {
-    'language-label': t.languageButton,
-    'chat-input': { placeholder: t.inputPlaceholder },
-    'home-title': t.homeTitle,
-    'search-input': { placeholder: t.search },
-    'sidebar-new-chat': t.newChat,
-    'sidebar-library': t.library,
-    'sidebar-gpts': t.gpts,
-    'sidebar-recent-title': t.recentChats,
-    'sidebar-no-chats': t.noRecentChats,
-    'btn-create-image': t.createImage,
-    'btn-summarize': t.summarizeText,
-    'btn-brainstorm': t.brainstorm,
-    'btn-more': t.more,
-    'tool-camera': t.camera,
-    'tool-photos': t.photos,
-    'tool-files': t.files,
-    'tool-create-image': t.createImageTool,
-    'tool-create-image-desc': t.createImageDesc,
-    'tool-thinking': t.thinking,
-    'tool-thinking-desc': t.thinkingDesc,
-    'tool-research': t.deepResearch,
-    'tool-research-desc': t.deepResearchDesc,
-    'tool-search': t.webSearch,
-    'tool-search-desc': t.webSearchDesc,
-    'tool-study': t.studyLearn,
-    'tool-study-desc': t.studyLearnDesc,
-    'tool-explore': t.exploreTools
-  };
-  
-  for (const [id, value] of Object.entries(elements)) {
-    const element = document.getElementById(id);
-    if (element) {
-      if (typeof value === 'object') {
-        Object.assign(element, value);
-      } else {
-        element.textContent = value;
-      }
-    }
-  }
-  
-  if (currentLanguage === 'ar') {
-    document.body.style.direction = 'rtl';
-  } else {
-    document.body.style.direction = 'ltr';
-  }
-}
-
+// --- LANGUAGE + SIDEBAR + TOOLS ---
 function toggleLanguage() {
-  const languageOrder = ['en', 'ckb', 'ar'];
-  const currentIndex = languageOrder.indexOf(currentLanguage);
-  const nextIndex = (currentIndex + 1) % languageOrder.length;
-  currentLanguage = languageOrder[nextIndex];
-  
+  const order = ['en', 'ckb', 'ar'];
+  const next = (order.indexOf(currentLanguage) + 1) % order.length;
+  currentLanguage = order[next];
   updateUILanguage();
-  
   const t = LANGUAGES[currentLanguage].translations;
   showToast(`${t.languageChanged} ${LANGUAGES[currentLanguage].name}`);
 }
 
-// Make functions globally accessible
-window.clearChat = clearChat;
-window.showFeatureNotAvailable = showFeatureNotAvailable;
-window.toggleSidebar = toggleSidebar;
-window.setPrompt = setPrompt;
-window.openAddToolsModal = openAddToolsModal;
-window.closeAddToolsModal = closeAddToolsModal;
-window.handleToolAction = handleToolAction;
+function updateUILanguage() {
+  const t = LANGUAGES[currentLanguage].translations;
+  document.getElementById('chat-input').placeholder = t.inputPlaceholder;
+  document.getElementById('home-title').textContent = t.homeTitle;
+  if (currentLanguage === 'ar') document.body.style.direction = 'rtl';
+  else document.body.style.direction = 'ltr';
+}
+
+// --- EXPORT UI FUNCTIONS ---
 window.handleSendMessage = handleSendMessage;
 window.checkInputStatus = checkInputStatus;
+window.clearChat = clearChat;
 window.toggleLanguage = toggleLanguage;
 
 // --- INIT ---
 document.addEventListener("DOMContentLoaded", () => {
-  document
-    .getElementById("chat-input")
-    .addEventListener("input", checkInputStatus);
-  document
-    .getElementById("chat-input")
-    .addEventListener("keypress", (e) => {
-      if (e.key === "Enter") handleSendMessage();
-    });
+  document.getElementById("chat-input").addEventListener("input", checkInputStatus);
+  document.getElementById("chat-input").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") handleSendMessage();
+  });
   lucide.createIcons();
   updateUILanguage();
 });
