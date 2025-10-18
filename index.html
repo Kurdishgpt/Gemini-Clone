@@ -28,7 +28,7 @@
             background-color: var(--bg-dark);
             color: var(--text-light);
             overflow-x: hidden;
-            /* FIXED LAYOUT: Layout direction is permanently LTR */
+            /* Layout direction is permanently LTR */
             direction: ltr; 
         }
 
@@ -354,16 +354,21 @@
     let currentLanguage = 'en'; // Initial state: 'en' (English)
     
     
-    // --- Configuration (Simulating import config from "./config") ---
-    // All configuration variables are now centralized here, acting as our 'config' module.
+    // #################################################
+    // --- 1. CONFIGURATION ---
+    // #################################################
+
+    // Model and API settings
     const config = {
         // The API Key MUST be an empty string for the runtime to inject it securely.
+        // The key you provided will be used automatically by the environment.
         apiKey: "", 
-        modelName: "gemini-2.0-flash", 
+        // Using the preferred model for text generation.
+        modelName: "gemini-2.5-flash-preview-09-2025", 
+        // Using the preferred model for image generation.
         imageModelName: "imagen-3.0-generate-002",
-        // The full path will be constructed in the function using v1
-        apiBaseUrlText: "https://generativelanguage.googleapis.com/v1", 
-        // Image generation still uses v1beta endpoint structure for Imagen.
+        // Using v1beta endpoint structure for consistency with the environment.
+        apiBaseUrlText: "https://generativelanguage.googleapis.com/v1beta", 
         apiBaseUrlImage: "https://generativelanguage.googleapis.com/v1beta/models/", 
         maxTokens: 2048,
         temperature: 0.7, 
@@ -401,7 +406,7 @@
             MAX_CHATS: 5,
         }
     };
-
+    
     // Localization Map (L10N) for UI elements (English and Kurdish/Sorani)
     const L10N = {
         'en': {
@@ -504,6 +509,10 @@
     });
 
 
+    // #################################################
+    // --- 2. SCRIPT LOGIC (Your intended script.js) ---
+    // #################################################
+
     // --- LOCALIZATION & UI FIXES ---
 
     /** Updates all static UI elements based on the currentLanguage state. */
@@ -536,8 +545,6 @@
         // 3. Update title attribute (NO document.body.style.direction CHANGE)
         const nextLang = currentLanguage === 'en' ? 'ku' : 'en';
         langButton.title = L10N[nextLang].lang_switch_title(dict['lang_display']);
-        
-        // Note: The UI now maintains the default LTR layout regardless of language.
     }
 
 
@@ -554,7 +561,7 @@
         showToast(toastMessage);
     }
     
-    // --- RECENT CHATS IMPLEMENTATION (UPDATED) ---
+    // --- RECENT CHATS IMPLEMENTATION ---
 
     /** Loads and renders recent chats from local storage. */
     function loadRecentChats() {
@@ -614,7 +621,7 @@
         loadRecentChats(); // Re-render the sidebar list
     }
 
-    // --- CHAT INTERFACE FUNCTIONS (UPDATED) ---
+    // --- CHAT INTERFACE FUNCTIONS ---
 
     /** Toggles the sidebar visibility. */
     function toggleSidebar() {
@@ -690,11 +697,11 @@
         }
     }
 
-    // --- API HANDLERS (UPDATED to use 'config' directly) ---
+    // --- API HANDLERS ---
 
     /** Calls the Gemini API for TEXT generation. */
     async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
-        // Use properties of the config object directly for a cleaner call
+        // Constructing the URL using the v1beta base and the correct model.
         const apiUrl = `${config.apiBaseUrlText}/models/${config.modelName}:generateContent?key=${config.apiKey}`;
 
         // Build the chat history for context
@@ -722,6 +729,12 @@
 
         while (attempt < maxRetries && !success) {
             try {
+                // Implementing exponential backoff logic for retries
+                if (attempt > 0) {
+                    const delay = Math.pow(2, attempt) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -729,6 +742,9 @@
                 });
                 
                 if (!response.ok) {
+                    // Check for 4xx or 5xx errors
+                    const errorDetails = await response.text();
+                    console.error(`Gemini Text API HTTP error! Status: ${response.status}`, errorDetails);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -738,11 +754,15 @@
             } catch (error) {
                 console.error(`Gemini Text API Attempt ${attempt + 1} failed:`, error);
                 attempt++;
-                if (attempt < maxRetries) {
-                    const delay = Math.pow(2, attempt) * 1000;
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
             }
+        }
+
+        if (!success || !finalResult) {
+            // Handle failure after all retries
+            const contentDiv = thinkingBubble.querySelector('.markdown-content');
+            contentDiv.innerHTML = `<p class="text-red-400">${CONFIG.MESSAGES.error_api_call_failed}</p>`;
+            enableInput();
+            return;
         }
         
         const candidate = finalResult?.candidates?.[0];
@@ -776,7 +796,7 @@
             showToast("An error occurred while displaying the response.");
         }
         
-        // NEW LOGIC: Save chat if this is the first response
+        // Save chat if this is the first response
         if (chatHistory.length === 2) {
             saveCurrentChat();
         }
@@ -813,6 +833,12 @@
 
         while (attempt < maxRetries && !success) {
             try {
+                // Implementing exponential backoff logic for retries
+                if (attempt > 0) {
+                    const delay = Math.pow(2, attempt) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -820,6 +846,8 @@
                 });
                 
                 if (!response.ok) {
+                    const errorDetails = await response.text();
+                    console.error(`Imagen API HTTP error! Status: ${response.status}`, errorDetails);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -829,18 +857,14 @@
             } catch (error) {
                 console.error(`Imagen API Attempt ${attempt + 1} failed:`, error);
                 attempt++;
-                if (attempt < maxRetries) {
-                    const delay = Math.pow(2, attempt) * 1000;
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
             }
         }
-        
-        const prediction = finalResult?.predictions?.[0];
-        const base64Data = prediction?.bytesBase64Encoded;
-        
+
         // Remove the old content and replace with image or error
         contentDiv.innerHTML = ''; 
+
+        const prediction = finalResult?.predictions?.[0];
+        const base64Data = prediction?.bytesBase64Encoded;
 
         if (base64Data) {
             const imageUrl = `data:image/png;base64,${base64Data}`;
@@ -853,7 +877,7 @@
             chatHistory.push({ role: 'model', content: `[Image generation failed for: "${imagePrompt}"]` }); 
         }
 
-        // NEW LOGIC: Save chat if this is the first response
+        // Save chat if this is the first response
         if (chatHistory.length === 2) {
             saveCurrentChat();
         }
