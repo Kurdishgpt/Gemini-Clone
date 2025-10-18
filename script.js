@@ -1,343 +1,1125 @@
-const messageForm = document.querySelector(".prompt__form");
-const chatHistoryContainer = document.querySelector(".chats");
-const suggestionItems = document.querySelectorAll(".suggests__item");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KurdishGPT Localized Chat Interface</title>
 
-const themeToggleButton = document.getElementById("themeToggler");
-const clearChatButton = document.getElementById("deleteButton");
+    <!-- External Libraries (Essential) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
 
-// State variables
-let currentUserMessage = null;
-let isGeneratingResponse = false;
+    <style>
+        /* --- CSS Variables and Dark Mode Styling --- */
+        :root {
+            --bg-dark: #000000;
+            --input-dark: #1f1f1f;
+            --purple-prime: #6d28d9;
+            --user-bubble: #348feb;
+            --ai-bubble: #2e2e2e;
+            --text-light: #ffffff;
+            --text-faded: #a0a0a0;
+            --input-border: #444444;
+        }
 
-import config from "./config.js";
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow-x: hidden;
+            /* Layout direction is permanently LTR */
+            direction: ltr; 
+        }
 
-// Initialize highlight.js with common languages
-hljs.configure({
-    languages: ['javascript', 'python', 'bash', 'typescript', 'json', 'html', 'css']
-});
+        /* Input bar fixed positioning */
+        #input-container { z-index: 10; }
 
-// Initialize highlight.js
-hljs.highlightAll();
+        /* Hide scrollbars for the chat container */
+        #chat-container-scrollable::-webkit-scrollbar { width: 0; background: transparent; }
+        #chat-container-scrollable { scrollbar-width: none; }
 
-const API_REQUEST_URL = `${config.API_BASE_URL}/models/${config.MODEL_NAME}:generateContent?key=${config.GEMINI_API_KEY}`;
+        /* Custom style for the new prompt buttons */
+        .prompt-button {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 9999px; /* Pill shape */
+            background-color: transparent;
+            color: var(--text-light);
+            font-size: 0.875rem;
+            transition: background-color 0.15s;
+            justify-content: center;
+            flex-grow: 1; /* Allow stretching in flex layout */
+        }
+        .prompt-button:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .prompt-button i { margin-right: 8px; }
 
-// Load saved data from local storage
-const loadSavedChatHistory = () => {
-  const savedConversations =
-    JSON.parse(localStorage.getItem("saved-api-chats")) || [];
-  const isLightTheme = localStorage.getItem("themeColor") === "light_mode";
+        /* Markdown Styling - Important for the streaming content */
+        .markdown-content { white-space: pre-wrap; }
+        .markdown-content h1 { font-size: 1.5em; font-weight: 700; margin-top: 1em; }
+        .markdown-content h2 { font-size: 1.3em; font-weight: 600; margin-top: 1em; }
+        .markdown-content p { margin-bottom: 0.5em; }
+        .markdown-content ul, .markdown-content ol { list-style-position: inside; margin-left: 1.5em; margin-bottom: 0.5em; }
+        .markdown-content code { background-color: #383838; padding: 2px 4px; border-radius: 4px; }
+        .markdown-content pre { background-color: #1a1a1a; padding: 10px; border-radius: 6px; overflow-x: auto; margin-top: 1em; margin-bottom: 1em; border: 1px solid #1f1f1f; }
+        .ai-bubble-footer { border-top: 1px solid #1a1a1a; }
+        .ai-bubble-footer button { color: var(--text-faded); }
 
-  document.body.classList.toggle("light_mode", isLightTheme);
-  themeToggleButton.innerHTML = isLightTheme
-    ? '<i class="bx bx-moon"></i>'
-    : '<i class="bx bx-sun"></i>';
+        /* --- Typing Cursor Animation --- */
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background-color: var(--text-light);
+            margin-left: 1px;
+            vertical-align: middle;
+            animation: blink 0.8s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
 
-  chatHistoryContainer.innerHTML = "";
+        /* Custom spinner for loading image */
+        .image-loading {
+            width: 24px;
+            height: 24px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid var(--purple-prime);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen antialiased">
 
-  // Iterate through saved chat history and display messages
-  savedConversations.forEach((conversation) => {
-    // Display the user's message
-    const userMessageHtml = `
+    <!-- SIDEBAR BACKDROP & MENU -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-75 z-40 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
 
-            <div class="message__content">
-                <img class="message__avatar" src="assets/profile.png" alt="User avatar">
-               <p class="message__text">${conversation.userMessage}</p>
+    <aside id="sidebar-menu" class="fixed top-0 left-0 h-full w-64 bg-black z-50 transform -translate-x-full transition-transform duration-300 shadow-2xl flex flex-col justify-between p-4 border-r border-gray-900">
+
+        <!-- TOP SECTION: Search & Main Links -->
+        <div>
+
+            <div class="flex items-center justify-between p-2 mb-4">
+                <div class="flex items-center text-gray-400 w-full">
+                    <i data-lucide="search" class="w-5 h-5 mr-2 flex-shrink-0"></i>
+                    <input type="text" data-l10n-key="search" placeholder="Search" class="bg-black text-white placeholder-gray-500 w-full focus:outline-none" />
+                </div>
+                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-1 rounded-full flex-shrink-0" aria-label="Close sidebar">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
             </div>
 
-        `;
+            <div class="space-y-1">
+                <a href="#" onclick="clearChat(true); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white font-medium">
+                    <i data-lucide="sparkles" class="w-5 h-5 mr-3 text-purple-400"></i>
+                    <span data-l10n-key="new_chat">New chat</span>
+                </a>
 
-    const outgoingMessageElement = createChatMessageElement(
-      userMessageHtml,
-      "message--outgoing"
-    );
-    chatHistoryContainer.appendChild(outgoingMessageElement);
+                <a href="#" onclick="showFeatureNotAvailable('Library'); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white">
+                    <i data-lucide="bookmark" class="w-5 h-5 mr-3 text-yellow-400"></i>
+                    <span data-l10n-key="library">Library</span>
+                </a>
 
-    // Display the API response
-    const responseText =
-      conversation.apiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
-    const parsedApiResponse = marked.parse(responseText); // Convert to HTML
-    const rawApiResponse = responseText; // Plain text version
+                <a href="#" onclick="showFeatureNotAvailable('GPTs'); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white">
+                    <i data-lucide="bot" class="w-5 h-5 mr-3 text-red-400"></i>
+                    <span data-l10n-key="gpts">GPTs</span>
+                </a>
 
-    const responseHtml = `
+            </div>
 
-           <div class="message__content">
-                <img class="message__avatar" src="assets/gemini.svg" alt="Gemini avatar">
-                <p class="message__text"></p>
-                <div class="message__loading-indicator hide">
-                    <div class="message__loading-bar"></div>
-                    <div class="message__loading-bar"></div>
-                    <div class="message__loading-bar"></div>
+            <!-- RECENT CHATS -->
+            <div class="mt-6">
+                <h3 class="text-xs font-semibold uppercase text-gray-500 mb-2 px-3" data-l10n-key="recent_chats_title">Recent Chats</h3>
+                <div id="recent-chats-list" class="space-y-1">
+                    <!-- Recent chats will be inserted here -->
+                    <p class="text-xs text-gray-600 px-3 py-1" data-l10n-key="no_recent_chats">No recent chats</p>
                 </div>
             </div>
-            <span onClick="copyMessageToClipboard(this)" class="message__icon hide"><i class='bx bx-copy-alt'></i></span>
 
-        `;
+        </div>
 
-    const incomingMessageElement = createChatMessageElement(
-      responseHtml,
-      "message--incoming"
-    );
-    chatHistoryContainer.appendChild(incomingMessageElement);
 
-    const messageTextElement =
-      incomingMessageElement.querySelector(".message__text");
+        <!-- BOTTOM SECTION: User Profile/Settings -->
+        <div class="border-t border-gray-800 pt-4">
 
-    // Display saved chat without typing effect
-    showTypingEffect(
-      rawApiResponse,
-      parsedApiResponse,
-      messageTextElement,
-      incomingMessageElement,
-      true
-    ); // 'true' skips typing
-  });
+            <a href="#" onclick="showFeatureNotAvailable('User Profile')" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors">
+                <i data-lucide="user" class="w-6 h-6 mr-3 text-gray-300"></i>
+                <span class="font-semibold">KURDISHGPT</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-gray-400"></i>
+            </a>
+        </div>
+    </aside>
 
-  document.body.classList.toggle("hide-header", savedConversations.length > 0);
-};
 
-// create a new chat message element
-const createChatMessageElement = (htmlContent, ...cssClasses) => {
-  const messageElement = document.createElement("div");
-  messageElement.classList.add("message", ...cssClasses);
-  messageElement.innerHTML = htmlContent;
-  return messageElement;
-};
+    <!-- HEADER -->
+    <header class="flex justify-between items-center p-4 h-16 sticky top-0 bg-black z-20 border-b border-gray-900">
 
-// Show typing effect
-const showTypingEffect = (
-  rawText,
-  htmlText,
-  messageElement,
-  incomingMessageElement,
-  skipEffect = false
-) => {
-  const copyIconElement =
-    incomingMessageElement.querySelector(".message__icon");
-  copyIconElement.classList.add("hide"); // Initially hide copy button
+        <!-- Left: Sidebar Toggle / Back Button (on desktop) -->
+        <button onclick="toggleSidebar()" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Open menu">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
 
-  if (skipEffect) {
-    // Display content directly without typing
-    messageElement.innerHTML = htmlText;
-    hljs.highlightAll();
-    addCopyButtonToCodeBlocks();
-    copyIconElement.classList.remove("hide"); // Show copy button
-    isGeneratingResponse = false;
-    return;
-  }
+        <!-- Center: Language/Translation Button (NEW) -->
+        <div class="flex-grow flex justify-center">
+            <button id="language-toggle-button" onclick="toggleLanguage()" 
+                    class="flex items-center px-3 py-2 rounded-full font-semibold transition-colors text-white text-sm shadow-lg" 
+                    style="background-color: var(--purple-prime);">
+                <i data-lucide="globe" class="w-4 h-4 mr-2"></i>
+                <span id="current-language-display">English</span>
+            </button>
+        </div>
 
-  const wordsArray = rawText.split(" ");
-  let wordIndex = 0;
+        <!-- Right: New Chat Button -->
+        <button onclick="clearChat(true)" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Start new chat">
+            <i data-lucide="rotate-cw" class="w-6 h-6"></i>
+        </button>
+    </header>
 
-  const typingInterval = setInterval(() => {
-    messageElement.innerText +=
-      (wordIndex === 0 ? "" : " ") + wordsArray[wordIndex++];
-    if (wordIndex === wordsArray.length) {
-      clearInterval(typingInterval);
-      isGeneratingResponse = false;
-      messageElement.innerHTML = htmlText;
-      hljs.highlightAll();
-      addCopyButtonToCodeBlocks();
-      copyIconElement.classList.remove("hide");
-    }
-  }, 75);
-};
 
-// Fetch API response based on user input
-const requestApiResponse = async (incomingMessageElement) => {
-  const messageTextElement =
-    incomingMessageElement.querySelector(".message__text");
+    <!-- MAIN CHAT/HOME CONTENT -->
+    <main id="main-content" class="flex-grow flex flex-col items-center justify-start p-4 overflow-y-auto" role="log">
 
-  try {
-    const response = await fetch(API_REQUEST_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: currentUserMessage }] }],
-      }),
-    });
+        <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4">
+            <h1 class="text-3xl font-semibold mb-10 mt-16 text-center" data-l10n-key="home_title">What can I help with?</h1>
 
-    const responseData = await response.json();
-    if (!response.ok) throw new Error(responseData.error.message);
+            <!-- Prompt Suggestions with ChatGPT-like style -->
+            <div id="suggestion-buttons" class="grid grid-cols-2 gap-3 w-full px-4 sm:px-0">
 
-    const responseText =
-      responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!responseText) throw new Error("Invalid API response.");
-
-    const parsedApiResponse = marked.parse(responseText);
-    const rawApiResponse = responseText;
-
-    showTypingEffect(
-      rawApiResponse,
-      parsedApiResponse,
-      messageTextElement,
-      incomingMessageElement
-    );
-
-    // Save conversation in local storage
-    let savedConversations =
-      JSON.parse(localStorage.getItem("saved-api-chats")) || [];
-    savedConversations.push({
-      userMessage: currentUserMessage,
-      apiResponse: responseData,
-    });
-    localStorage.setItem("saved-api-chats", JSON.stringify(savedConversations));
-  } catch (error) {
-    isGeneratingResponse = false;
-    messageTextElement.innerText = error.message;
-    messageTextElement.closest(".message").classList.add("message--error");
-  } finally {
-    incomingMessageElement.classList.remove("message--loading");
-  }
-};
-
-// Add copy button to code blocks
-const addCopyButtonToCodeBlocks = () => {
-  const codeBlocks = document.querySelectorAll("pre");
-  codeBlocks.forEach((block) => {
-    const codeElement = block.querySelector("code");
-    let language =
-      [...codeElement.classList]
-        .find((cls) => cls.startsWith("language-"))
-        ?.replace("language-", "") || "Text";
-
-    const languageLabel = document.createElement("div");
-    languageLabel.innerText =
-      language.charAt(0).toUpperCase() + language.slice(1);
-    languageLabel.classList.add("code__language-label");
-    block.appendChild(languageLabel);
-
-    const copyButton = document.createElement("button");
-    copyButton.innerHTML = `<i class='bx bx-copy'></i>`;
-    copyButton.classList.add("code__copy-btn");
-    block.appendChild(copyButton);
-
-    copyButton.addEventListener("click", () => {
-      navigator.clipboard
-        .writeText(codeElement.innerText)
-        .then(() => {
-          copyButton.innerHTML = `<i class='bx bx-check'></i>`;
-          setTimeout(
-            () => (copyButton.innerHTML = `<i class='bx bx-copy'></i>`),
-            2000
-          );
-        })
-        .catch((err) => {
-          console.error("Copy failed:", err);
-          alert("Unable to copy text!");
-        });
-    });
-  });
-};
-
-// Show loading animation during API request
-const displayLoadingAnimation = () => {
-  const loadingHtml = `
-
-        <div class="message__content">
-            <img class="message__avatar" src="assets/gemini.svg" alt="Gemini avatar">
-            <p class="message__text"></p>
-            <div class="message__loading-indicator">
-                <div class="message__loading-bar"></div>
-                <div class="message__loading-bar"></div>
-                <div class="message__loading-bar"></div>
+                <button onclick="setPrompt(CONFIG.PROMPTS.image.trim())" class="prompt-button">
+                    <i data-lucide="image" class="w-5 h-5 text-green-400"></i>
+                    <span data-l10n-key="prompt_image">Create image</span>
+                </button>
+                <button onclick="setPrompt(CONFIG.PROMPTS.summarize.trim())" class="prompt-button">
+                    <i data-lucide="file-text" class="w-5 h-5 text-orange-400"></i>
+                    <span data-l10n-key="prompt_summarize">Summarize text</span>
+                </button>
+                <button onclick="setPrompt(CONFIG.PROMPTS.brainstorm.trim())" class="prompt-button">
+                    <i data-lucide="lightbulb" class="w-5 h-5 text-yellow-400"></i>
+                    <span data-l10n-key="prompt_brainstorm">Brainstorm</span>
+                </button>
+                <button onclick="setPrompt(CONFIG.PROMPTS.more.trim())" class="prompt-button">
+                    <i data-lucide="more-horizontal" class="w-5 h-5 text-purple-400"></i>
+                    <span data-l10n-key="prompt_more">More</span>
+                </button>
             </div>
         </div>
-        <span onClick="copyMessageToClipboard(this)" class="message__icon hide"><i class='bx bx-copy-alt'></i></span>
 
-    `;
 
-  const loadingMessageElement = createChatMessageElement(
-    loadingHtml,
-    "message--incoming",
-    "message--loading"
-  );
-  chatHistoryContainer.appendChild(loadingMessageElement);
+        <div id="chat-container-scrollable" class="hidden w-full h-full max-w-2xl mx-auto overflow-y-auto pt-4 pb-20">
 
-  requestApiResponse(loadingMessageElement);
-};
-
-// Copy message to clipboard
-const copyMessageToClipboard = (copyButton) => {
-  const messageContent =
-    copyButton.parentElement.querySelector(".message__text").innerText;
-
-  navigator.clipboard.writeText(messageContent);
-  copyButton.innerHTML = `<i class='bx bx-check'></i>`; // Confirmation icon
-  setTimeout(
-    () => (copyButton.innerHTML = `<i class='bx bx-copy-alt'></i>`),
-    1000
-  ); // Revert icon after 1 second
-};
-
-// Handle sending chat messages
-const handleOutgoingMessage = () => {
-  currentUserMessage =
-    messageForm.querySelector(".prompt__form-input").value.trim() ||
-    currentUserMessage;
-  if (!currentUserMessage || isGeneratingResponse) return; // Exit if no message or already generating response
-
-  isGeneratingResponse = true;
-
-  const outgoingMessageHtml = `
-
-        <div class="message__content">
-            <img class="message__avatar" src="assets/profile.png" alt="User avatar">
-            <p class="message__text"></p>
         </div>
 
-    `;
+    </main>
 
-  const outgoingMessageElement = createChatMessageElement(
-    outgoingMessageHtml,
-    "message--outgoing"
-  );
-  outgoingMessageElement.querySelector(".message__text").innerText =
-    currentUserMessage;
-  chatHistoryContainer.appendChild(outgoingMessageElement);
+    <!-- ADD TOOLS MODAL OVERLAY -->
+    <div id="add-tools-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-90 flex flex-col pt-16">
+        <div class="absolute top-0 left-0 w-full p-4 flex justify-start">
+            <button onclick="closeAddToolsModal()" class="text-white p-2" aria-label="Close tools menu">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
 
-  messageForm.reset(); // Clear input field
-  document.body.classList.add("hide-header");
-  setTimeout(displayLoadingAnimation, 500); // Show loading animation after delay
-};
+        <!-- Top Grid of Primary Actions (Camera, Photos, Files) -->
+        <div class="w-full px-8 mb-8 mt-4">
+            <div class="grid grid-cols-3 gap-4 max-w-sm mx-auto">
+                <!-- Camera -->
+                <button onclick="handleToolAction('Camera')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
+                    <i data-lucide="camera" class="w-8 h-8 mb-2 text-white"></i>
+                    <p data-l10n-key="tool_camera">Camera</p>
+                </button>
+                <!-- Photos -->
+                <button onclick="handleToolAction('Photos')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
+                    <i data-lucide="image" class="w-8 h-8 mb-2 text-white"></i>
+                    <p data-l10n-key="tool_photos">Photos</p>
+                </button>
+                <!-- Files -->
+                <button onclick="handleToolAction('Files')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
+                    <i data-lucide="folder" class="w-8 h-8 mb-2 text-white"></i>
+                    <p data-l10n-key="tool_files">Files</p>
+                </button>
+            </div>
+        </div>
 
-// Toggle between light and dark themes
-themeToggleButton.addEventListener("click", () => {
-  const isLightTheme = document.body.classList.toggle("light_mode");
-  localStorage.setItem("themeColor", isLightTheme ? "light_mode" : "dark_mode");
+        <!-- Tools List -->
+        <div class="flex-grow overflow-y-auto px-6 space-y-2">
+            <!-- Create Image -->
+            <button onclick="handleToolAction('Create image', CONFIG.PROMPTS.image)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+                <i data-lucide="image" class="w-6 h-6 mr-4 text-green-400"></i>
+                <div>
+                    <p class="font-semibold text-white" data-l10n-key="tool_image_title">Create image</p>
+                    <p class="text-xs text-gray-400" data-l10n-key="tool_image_desc">Visualize anything</p>
+                </div>
+            </button>
 
-  // Update icon based on theme
-  const newIconClass = isLightTheme ? "bx bx-moon" : "bx bx-sun";
-  themeToggleButton.querySelector("i").className = newIconClass;
-});
+            <!-- Thinking -->
+            <button onclick="handleToolAction('Thinking', CONFIG.PROMPTS.thinking)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+                <i data-lucide="lightbulb" class="w-6 h-6 mr-4 text-yellow-400"></i>
+                <div>
+                    <p class="font-semibold text-white" data-l10n-key="tool_thinking_title">Thinking</p>
+                    <p class="text-xs text-gray-400" data-l10n-key="tool_thinking_desc">Think longer for better answers</p>
+                </div>
+            </button>
 
-// Clear all chat history
-clearChatButton.addEventListener("click", () => {
-  if (confirm("Are you sure you want to delete all chat history?")) {
-    localStorage.removeItem("saved-api-chats");
+            <!-- Deep research -->
+            <button onclick="handleToolAction('Deep research', CONFIG.PROMPTS.research)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+                <i data-lucide="flask-round" class="w-6 h-6 mr-4 text-red-400"></i>
+                <div>
+                    <p class="font-semibold text-white" data-l10n-key="tool_research_title">Deep research</p>
+                    <p class="text-xs text-gray-400" data-l10n-key="tool_research_desc">Get a detailed report</p>
+                </div>
+            </button>
 
-    // Reload chat history to reflect changes
-    loadSavedChatHistory();
+            <!-- Web search -->
+            <button onclick="handleToolAction('Web search', CONFIG.PROMPTS.search)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+                <i data-lucide="globe" class="w-6 h-6 mr-4 text-blue-400"></i>
+                <div>
+                    <p class="font-semibold text-white" data-l10n-key="tool_web_title">Web search</p>
+                    <p class="text-xs text-gray-400" data-l10n-key="tool_web_desc">Find real-time news and info</p>
+                </div>
+            </button>
 
-    currentUserMessage = null;
-    isGeneratingResponse = false;
-  }
-});
+            <!-- Study and learn -->
+            <button onclick="handleToolAction('Study and learn', CONFIG.PROMPTS.study)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+                <i data-lucide="book-open-text" class="w-6 h-6 mr-4 text-purple-400"></i>
+                <div>
+                    <p class="font-semibold text-white" data-l10n-key="tool_study_title">Study and learn</p>
+                    <p class="text-xs text-gray-400" data-l10n-key="tool_study_desc">Learn a new concept</p>
+                </div>
+            </button>
+        </div>
 
-// Handle click on suggestion items
-suggestionItems.forEach((suggestion) => {
-  suggestion.addEventListener("click", () => {
-    currentUserMessage = suggestion.querySelector(
-      ".suggests__item-text"
-    ).innerText;
-    handleOutgoingMessage();
-  });
-});
+        <!-- Explore Tools Button -->
+        <div class="p-6">
+            <button onclick="handleToolAction('Explore tools')" class="w-full py-3 rounded-full font-bold text-center transition-colors" style="background-color: var(--ai-bubble); color: var(--text-light);" data-l10n-key="explore_tools">
+                Explore tools
+            </button>
+        </div>
+    </div>
 
-// Prevent default from submission and handle outgoing message
-messageForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  handleOutgoingMessage();
-});
 
-// Load saved chat history on page load
-loadSavedChatHistory();
+    <!-- INPUT BAR / FOOTER (ChatGPT Style) -->
+    <footer id="input-container" class="fixed bottom-0 w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
+        <div class="w-full flex items-end p-2 rounded-2xl border" style="background-color: var(--input-dark); border-color: var(--input-border);">
+
+            <!-- Left: Attachment/Tools Button (Always visible) -->
+            <button id="attachment-button" onclick="openAddToolsModal()"
+                    class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors"
+                    aria-label="Add attachment or open tools" data-l10n-key="input_attachment_aria" title="Add attachment or open tools">
+                <i data-lucide="plus" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Center: Input Wrapper -->
+            <div class="flex flex-grow items-center mx-1">
+                <input id="chat-input"
+                       type="text"
+                       data-l10n-key="input_placeholder"
+                       placeholder="Ask KurdishGPT"
+                       oninput="checkInputStatus()"
+                       class="w-full bg-transparent text-white focus:outline-none py-2 text-base">
+            </div>
+
+            <!-- Right: Send or Mic/Wave Button -->
+
+            <!-- Send Button (Hidden by default) -->
+            <button id="send-button" onclick="handleSendMessage()"
+                    class="flex-shrink-0 p-2 text-blue-400 hover:text-blue-300 transition-colors hidden"
+                    aria-label="Send message" data-l10n-key="input_send_aria" title="Send message">
+                <i data-lucide="send" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Mic/Wave Button (Visible when input is empty) -->
+            <button id="mic-button" onclick="showFeatureNotAvailable('Voice Input')"
+                    class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors"
+                    aria-label="Voice input" data-l10n-key="input_voice_aria" title="Voice input">
+                <!-- Using a volume icon to represent the voice prompt indicator -->
+                <i data-lucide="volume-2" class="w-6 h-6"></i>
+            </button>
+
+        </div>
+    </footer>
+
+
+<script>
+    // --- GLOBAL STATE ---
+    let chatHistory = [];
+    let isTyping = false;
+    let currentLanguage = 'en'; // Initial state: 'en' (English)
+    
+    
+    // #################################################
+    // --- 1. CONFIGURATION ---
+    // #################################################
+
+    // Model and API settings
+    const config = {
+        // The API Key MUST be an empty string for the runtime to inject it securely.
+        apiKey: "", 
+        // Using the preferred model for text generation.
+        modelName: "gemini-2.5-flash-preview-09-2025", 
+        // Using the preferred model for image generation.
+        imageModelName: "imagen-3.0-generate-002",
+        // Base URLs
+        apiBaseUrlText: "https://generativelanguage.googleapis.com/v1beta", 
+        apiBaseUrlImage: "https://generativelanguage.googleapis.com/v1beta/models/", 
+        maxTokens: 2048,
+        temperature: 0.7, 
+        enableSearchGrounding: true,
+    };
+
+    // Configuration for static text and prompts
+    const CONFIG = {
+        PROMPTS: {
+            image: 'Generate a high-quality image of ',
+            summarize: 'Summarize the plot of ',
+            brainstorm: 'Brainstorm 5 ideas for a startup in Erbil.',
+            more: 'What are some fun facts about the Kurdistan Region of Iraq?',
+            thinking: 'Analyze the historical significance of the Medes.',
+            research: 'Write a deep report on the future of Kurdish language technology.',
+            search: 'What is the current price of oil?',
+            study: 'Explain the concept of neural networks in simple terms.',
+        },
+        MESSAGES: {
+            action_copy_success: 'Content copied to clipboard!',
+            action_copied: 'Copied.',
+            action_tts: 'Text-to-Speech is playing the response now.',
+            action_regenerate: 'Regenerating response...',
+            action_like: 'Thanks for the feedback!',
+            action_dislike: 'Thanks for the feedback. We will improve.',
+            action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
+            error_api_call_failed: 'Failed to get a response from the API. Check the console for "HTTP error" details.',
+            error_api_blocked: 'The response was blocked due to safety settings.',
+            error_image_failed: 'Failed to generate image. The prompt might be too complex or blocked by safety filters.',
+            image_success: 'Here is the image I generated for you:',
+        },
+        // LOCAL STORAGE KEYS
+        STORAGE_KEY: {
+            RECENT_CHATS: 'kurdish_gpt_recent_chats',
+            MAX_CHATS: 5,
+        }
+    };
+    
+    // Localization Map (L10N) for UI elements (English and Kurdish/Sorani)
+    const L10N = {
+        'en': {
+            // General UI
+            'new_chat': 'New chat',
+            'library': 'Library',
+            'gpts': 'GPTs',
+            'search': 'Search',
+            'recent_chats_title': 'Recent Chats',
+            'no_recent_chats': 'No recent chats',
+            'home_title': 'What can I help with?',
+            'input_placeholder': 'Ask KurdishGPT',
+            'input_attachment_aria': 'Add attachment or open tools',
+            'input_send_aria': 'Send message',
+            'input_voice_aria': 'Voice input',
+            'explore_tools': 'Explore tools',
+            
+            // Prompt Suggestions
+            'prompt_image': 'Create image',
+            'prompt_summarize': 'Summarize text',
+            'prompt_brainstorm': 'Brainstorm',
+            'prompt_more': 'More',
+
+            // Tools Modal
+            'tool_camera': 'Camera',
+            'tool_photos': 'Photos',
+            'tool_files': 'Files',
+            'tool_image_title': 'Create image',
+            'tool_image_desc': 'Visualize anything',
+            'tool_thinking_title': 'Thinking',
+            'tool_thinking_desc': 'Think longer for better answers',
+            'tool_research_title': 'Deep research',
+            'tool_research_desc': 'Get a detailed report',
+            'tool_web_title': 'Web search',
+            'tool_web_desc': 'Find real-time news and info',
+            'tool_study_title': 'Study and learn',
+            'tool_study_desc': 'Learn a new concept',
+
+            // Toast Messages (Updated for clarity)
+            'lang_set_to': 'Output language set to English. All subsequent AI responses will be in English.',
+            'lang_switch_title': (current) => `Current output language: ${current}. Click to switch to Kurdish (کوردی).`,
+            
+            // Internal use
+            'lang_display': 'English',
+            'lang_api_instruction': "Respond naturally in English and follow the user's prompt.",
+        },
+        'ku': {
+            // General UI
+            'new_chat': 'چاتی نوێ',
+            'library': 'کتێبخانە',
+            'gpts': 'مۆدێلەکان',
+            'search': 'گەڕان',
+            'recent_chats_title': 'چاتە نوێکانی دوایی',
+            'no_recent_chats': 'هیچ چاتێکی نوێ نییە',
+            'home_title': 'چیم پێ دەکرێت بۆت؟',
+            'input_placeholder': 'پرسیار لە کوردیش جی پی تی بکە',
+            'input_attachment_aria': 'زیادکردنی پاشکۆ یان کردنەوەی ئامرازەکان',
+            'input_send_aria': 'ناردنی پەیام',
+            'input_voice_aria': 'دەنگی',
+            'explore_tools': 'پشکنینی ئامرازەکان',
+
+            // Prompt Suggestions
+            'prompt_image': 'وێنە دروست بکە',
+            'prompt_summarize': 'پوختەکردنی دەق',
+            'prompt_brainstorm': 'بیرکردنەوە',
+            'prompt_more': 'زیاتر',
+
+            // Tools Modal
+            'tool_camera': 'کامێرا',
+            'tool_photos': 'وێنەکان',
+            'tool_files': 'فایلەکان',
+            'tool_image_title': 'وێنە دروست بکە',
+            'tool_image_desc': 'هەر شتێک بهێنە بەرچاو',
+            'tool_thinking_title': 'بیرکردنەوە',
+            'tool_thinking_desc': 'زیاتر بیر بکەوە بۆ وەڵامی باشتر',
+            'tool_research_title': 'لێکۆڵینەوەی قووڵ',
+            'tool_research_desc': 'ڕاپۆرتێکی ووردو وەرگرە',
+            'tool_web_title': 'گەڕانی وێب',
+            'tool_web_desc': 'هەواڵی کاتی و زانیاری بدۆزەوە',
+            'tool_study_title': 'خوێندن و فێربوون',
+            'tool_study_desc': 'چەمکێکی نوێ فێربە',
+
+            // Toast Messages (Updated for clarity)
+            'lang_set_to': 'زمانی دەرچوون گۆڕا بۆ کوردی (کوردی). هەموو پەیامی وەڵامەکانی داهاتووی AI بە کوردی دەبێت.',
+            'lang_switch_title': (current) => `زمانی دەرچوونی ئێستا: ${current}. کلیک بکە بۆ گۆڕین بۆ ئینگلیزی.`,
+            
+            // Internal use
+            'lang_display': 'کوردی (کوردی)',
+            'lang_api_instruction': "All responses MUST be translated into Kurdish (Sorani dialect: کوردی) and follow the user's prompt. Ensure the response is in Kurdish.",
+        }
+    };
+
+
+    // Markdown Converter Setup
+    const converter = new showdown.Converter({
+        tables: true,
+        strikethrough: true,
+        tasklists: true,
+        simpleLineBreaks: true
+    });
+
+
+    // #################################################
+    // --- 2. JAVASCRIPT LOGIC ---
+    // #################################################
+
+    // --- LOCALIZATION & UI FIXES ---
+
+    /** Updates all static UI elements based on the currentLanguage state. */
+    function updateUIForLanguage() {
+        const lang = currentLanguage;
+        const dict = L10N[lang];
+
+        // 1. Update all elements with data-l10n-key
+        document.querySelectorAll('[data-l10n-key]').forEach(el => {
+            const key = el.getAttribute('data-l10n-key');
+            if (dict[key]) {
+                if (el.tagName === 'INPUT' && el.type === 'text') {
+                    el.placeholder = dict[key];
+                } else if (key.endsWith('_aria') || key.endsWith('_title')) {
+                    // Update aria-label/title attributes if necessary
+                    el.setAttribute('title', dict[key]);
+                    el.setAttribute('aria-label', dict[key]);
+                } else {
+                    el.textContent = dict[key];
+                }
+            }
+        });
+
+        // 2. Update the language toggle button display
+        const langDisplay = document.getElementById('current-language-display');
+        const langButton = document.getElementById('language-toggle-button');
+        
+        langDisplay.textContent = dict['lang_display'];
+        
+        // 3. Update title attribute (NO document.body.style.direction CHANGE)
+        const nextLang = currentLanguage === 'en' ? 'ku' : 'en';
+        langButton.title = L10N[nextLang].lang_switch_title(dict['lang_display']);
+    }
+
+
+    /** Toggles the translation language. */
+    function toggleLanguage() {
+        const newLang = currentLanguage === 'en' ? 'ku' : 'en';
+        currentLanguage = newLang;
+
+        // 1. Update all UI text 
+        updateUIForLanguage();
+        
+        // 2. Show confirmation toast
+        const toastMessage = L10N[newLang].lang_set_to;
+        showToast(toastMessage);
+    }
+    
+    // --- RECENT CHATS IMPLEMENTATION (Uses localStorage) ---
+
+    /** Loads and renders recent chats from local storage. */
+    function loadRecentChats() {
+        const chatListDiv = document.getElementById('recent-chats-list');
+        const chatsJSON = localStorage.getItem(CONFIG.STORAGE_KEY.RECENT_CHATS);
+        let chats = chatsJSON ? JSON.parse(chatsJSON) : [];
+
+        chatListDiv.innerHTML = '';
+        
+        if (chats.length === 0) {
+            const noChats = document.createElement('p');
+            noChats.className = 'text-xs text-gray-600 px-3 py-1';
+            noChats.setAttribute('data-l10n-key', 'no_recent_chats');
+            chatListDiv.appendChild(noChats);
+            updateUIForLanguage(); 
+        } else {
+            chats.forEach((chat) => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.className = 'flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white text-sm truncate';
+                link.textContent = chat.title;
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    showFeatureNotAvailable(`Loading Chat: "${chat.title}"`);
+                    toggleSidebar();
+                };
+                chatListDiv.appendChild(link);
+            });
+        }
+    }
+
+    /** Saves the current chat (if new or updated) to local storage. */
+    function saveCurrentChat() {
+        const firstUserMessage = chatHistory.find(msg => msg.role === 'user');
+        if (!firstUserMessage) return;
+
+        let chatTitle = firstUserMessage.content.substring(0, 40);
+        if (firstUserMessage.content.length > 40) chatTitle += '...';
+
+        const chatsJSON = localStorage.getItem(CONFIG.STORAGE_KEY.RECENT_CHATS);
+        let chats = chatsJSON ? JSON.parse(chatsJSON) : [];
+
+        // Update position to the top or add new
+        chats = chats.filter(chat => chat.title !== chatTitle);
+        const newChatEntry = { id: Date.now(), title: chatTitle };
+        chats.unshift(newChatEntry);
+
+        // Limit the list size
+        chats = chats.slice(0, CONFIG.STORAGE_KEY.MAX_CHATS);
+
+        localStorage.setItem(CONFIG.STORAGE_KEY.RECENT_CHATS, JSON.stringify(chats));
+        loadRecentChats(); // Re-render the sidebar list
+    }
+
+    // --- CHAT INTERFACE FUNCTIONS ---
+
+    /** Toggles the sidebar visibility. */
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        const isOpen = sidebar.classList.contains('translate-x-0');
+
+        if (isOpen) {
+            sidebar.classList.remove('translate-x-0');
+            sidebar.classList.add('-translate-x-full');
+            backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+        } else {
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100', 'pointer-events-auto');
+        }
+    }
+
+    /** Clears the chat history and resets the view to the home screen. */
+    function clearChat(shouldSave) {
+        if (shouldSave && chatHistory.length > 1) {
+            saveCurrentChat();
+        }
+
+        chatHistory = [];
+        const chatContainer = document.getElementById('chat-container-scrollable');
+        const homeScreen = document.getElementById('home-screen');
+        chatContainer.innerHTML = '';
+        chatContainer.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
+        document.getElementById('chat-input').value = '';
+        checkInputStatus();
+    }
+    
+    /** Main function to handle sending a message (user prompt). */
+    function handleSendMessage() {
+        const inputElement = document.getElementById('chat-input');
+        const userPrompt = inputElement.value.trim();
+
+        if (userPrompt === '' || isTyping) return;
+
+        // 1. Setup view
+        document.getElementById('home-screen').classList.add('hidden');
+        document.getElementById('chat-container-scrollable').classList.remove('hidden');
+
+        // 2. Add user message
+        chatHistory.push({ role: 'user', content: userPrompt });
+        renderMessage('user', userPrompt);
+
+        // 3. Clear input and disable
+        inputElement.value = '';
+        checkInputStatus();
+        inputElement.setAttribute('disabled', 'true');
+        isTyping = true;
+
+        // 4. Render AI thinking/typing bubble
+        const thinkingBubble = renderMessage('model', 'Thinking...', true);
+        
+        // 5. Determine if this is an image or text request
+        const isImageRequest = userPrompt.startsWith(CONFIG.PROMPTS.image.trim());
+
+        // 6. Define the translation instruction based on the current language
+        const translationInstruction = L10N[currentLanguage].lang_api_instruction;
+
+        // 7. Call the appropriate API
+        if (isImageRequest) {
+            generateImage(userPrompt, thinkingBubble, translationInstruction);
+        } else {
+            callGeminiTextAPI(userPrompt, thinkingBubble, translationInstruction);
+        }
+    }
+
+    // --- API HANDLERS ---
+
+    /** Calls the Gemini API for TEXT generation with exponential backoff (critical fix). */
+    async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
+        const apiKey = config.apiKey; 
+        const apiUrl = `${config.apiBaseUrlText}/models/${config.modelName}:generateContent?key=${apiKey}`;
+
+        // Build the chat history for context (last 10 messages)
+        const contents = chatHistory.map(msg => ({
+            role: msg.role === 'model' ? 'model' : 'user', 
+            parts: [{ text: msg.content }]
+        })).slice(-10);
+
+        const payload = {
+            contents: contents,
+            generationConfig: {
+                maxOutputTokens: config.maxTokens,
+                temperature: config.temperature,
+            },
+            systemInstruction: {
+                parts: [{ text: systemInstruction }]
+            },
+            ...(config.enableSearchGrounding && { tools: [{ "google_search": {} }] })
+        };
+        
+        const maxRetries = 3;
+        let attempt = 0;
+        let finalResult = null;
+        let success = false;
+        let lastError = null;
+
+        while (attempt < maxRetries && !success) {
+            try {
+                if (attempt > 0) {
+                    // Exponential backoff: 1s, 2s, 4s
+                    const delay = Math.pow(2, attempt) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorDetails = await response.text();
+                    lastError = `Status: ${response.status}. Details: ${errorDetails.substring(0, 100)}...`;
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                finalResult = await response.json();
+                success = true;
+
+            } catch (error) {
+                attempt++;
+                if (error.message.startsWith('HTTP error!')) {
+                    // console.error(`[Attempt ${attempt}/${maxRetries}] Failed with HTTP error: ${lastError}`);
+                } else {
+                    // console.error(`[Attempt ${attempt}/${maxRetries}] Failed with Network/Fetch error:`, error);
+                }
+            }
+        }
+
+        if (!success || !finalResult) {
+            // Handle critical failure after all retries
+            const contentDiv = thinkingBubble.querySelector('.markdown-content');
+            contentDiv.innerHTML = `<p class="text-red-400">${CONFIG.MESSAGES.error_api_call_failed}</p>`;
+            console.error("CRITICAL API FAILURE: Failed all attempts to call Gemini Text API.", lastError);
+            enableInput();
+            return;
+        }
+        
+        const candidate = finalResult?.candidates?.[0];
+        
+        let aiResponseText = CONFIG.MESSAGES.error_api_call_failed;
+        let sources = [];
+
+        if (candidate && candidate.content?.parts?.[0]?.text) {
+            aiResponseText = candidate.content.parts[0].text;
+            
+            // Extract grounding sources
+            const groundingMetadata = candidate.groundingMetadata;
+            if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                sources = groundingMetadata.groundingAttributions
+                    .map(attribution => ({
+                        uri: attribution.web?.uri,
+                        title: attribution.web?.title,
+                    }))
+                    .filter(source => source.uri && source.title);
+            }
+
+        } else if (candidate?.safetyRatings?.length > 0) {
+            aiResponseText = CONFIG.MESSAGES.error_api_blocked;
+            console.warn("Response blocked by safety settings:", candidate.safetyRatings);
+        }
+
+        try {
+            await streamResponse(aiResponseText, thinkingBubble, sources);
+        } catch (e) {
+            console.error("Error during response streaming:", e);
+            showToast("An error occurred while displaying the response.");
+        }
+        
+        // Save chat if this is the first response
+        if (chatHistory.length === 2) {
+            saveCurrentChat();
+        }
+
+        enableInput();
+    }
+
+
+    /** Calls the Imagen API for IMAGE generation. */
+    async function generateImage(userPrompt, thinkingBubble) {
+        const apiKey = config.apiKey; 
+        const apiUrl = `${config.apiBaseUrlImage}${config.imageModelName}:predict?key=${apiKey}`;
+        
+        const imagePrompt = userPrompt.substring(CONFIG.PROMPTS.image.length).trim();
+
+        const payload = { 
+            instances: { prompt: imagePrompt }, 
+            parameters: { "sampleCount": 1} 
+        };
+
+        const maxRetries = 3;
+        let attempt = 0;
+        let finalResult = null;
+        let success = false;
+
+        // Replace loading dots with spinner
+        const contentDiv = thinkingBubble.querySelector('.markdown-content');
+        contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center p-4">
+                                    <div class="image-loading"></div>
+                                    <p class="mt-2 text-sm text-gray-400">Generating Image...</p>
+                                </div>`;
+
+        while (attempt < maxRetries && !success) {
+            try {
+                if (attempt > 0) {
+                    const delay = Math.pow(2, attempt) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                finalResult = await response.json();
+                success = true;
+
+            } catch (error) {
+                attempt++;
+            }
+        }
+
+        contentDiv.innerHTML = ''; 
+
+        const prediction = finalResult?.predictions?.[0];
+        const base64Data = prediction?.bytesBase64Encoded;
+
+        if (base64Data) {
+            const imageUrl = `data:image/png;base64,${base64Data}`;
+            renderImageResult(imageUrl, thinkingBubble, imagePrompt);
+            chatHistory.push({ role: 'model', content: `[Generated image for: "${imagePrompt}"]` }); 
+        } else {
+            contentDiv.innerHTML = `<p class="text-red-400">${CONFIG.MESSAGES.error_image_failed}</p>`;
+            chatHistory.push({ role: 'model', content: `[Image generation failed for: "${imagePrompt}"]` }); 
+        }
+
+        if (chatHistory.length === 2) {
+            saveCurrentChat();
+        }
+
+        thinkingBubble.querySelector('.ai-bubble-footer').classList.remove('hidden');
+        enableInput();
+    }
+    
+    // --- UTILITY & VIEW FUNCTIONS ---
+
+    /** Sets the text input value and focuses it. Used by suggestion buttons. */
+    function setPrompt(prompt) {
+        document.getElementById('chat-input').value = prompt;
+        document.getElementById('chat-input').focus();
+        checkInputStatus();
+    }
+
+    /** Switches the input bar buttons between Mic/Wave and Send based on input text. */
+    function checkInputStatus() {
+        const input = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const micButton = document.getElementById('mic-button');
+
+        if (input.value.trim().length > 0) {
+            sendButton.classList.remove('hidden');
+            micButton.classList.add('hidden');
+        } else {
+            sendButton.classList.add('hidden');
+            micButton.classList.remove('hidden');
+        }
+    }
+
+    /** Opens the Add Tools modal. */
+    function openAddToolsModal() { document.getElementById('add-tools-modal').classList.remove('hidden'); }
+
+    /** Closes the Add Tools modal. */
+    function closeAddToolsModal() { document.getElementById('add-tools-modal').classList.add('hidden'); }
+
+    /** Handles an action from the tools modal (e.g., Camera, Photos, Files). */
+    function handleToolAction(tool, prompt = '') {
+        closeAddToolsModal();
+        if (prompt) {
+            setPrompt(prompt);
+        } else {
+            showFeatureNotAvailable(tool);
+        }
+    }
+
+    /** Re-enables the input field and resets typing state. */
+    function enableInput() {
+        const inputElement = document.getElementById('chat-input');
+        inputElement.removeAttribute('disabled');
+        isTyping = false;
+        inputElement.focus();
+    }
+
+
+    /** Simulates the streaming effect of a TEXT response and handles source display. */
+    async function streamResponse(content, bubble, sources = []) {
+        const contentDiv = bubble.querySelector('.markdown-content');
+        const footerDiv = bubble.querySelector('.ai-bubble-footer');
+
+        const totalChunks = content.length;
+        let streamedText = '';
+
+        // Clear loading icon and insert the cursor
+        contentDiv.innerHTML = `<span class="typing-cursor"></span>`;
+
+        // Simulate chunk delivery
+        for (let i = 0; i < totalChunks; i++) {
+            streamedText += content[i];
+
+            if (i % 5 === 0 || i === totalChunks - 1) {
+                const htmlContent = converter.makeHtml(streamedText);
+                contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
+                scrollChatToBottom();
+            }
+            // Control streaming speed for simulation
+            await new Promise(resolve => setTimeout(resolve, 5)); 
+        }
+
+        // Finalize the content
+        contentDiv.innerHTML = converter.makeHtml(content);
+        const cursor = bubble.querySelector('.typing-cursor');
+        if (cursor) cursor.remove();
+        
+        // Add sources display if sources exist
+        if (sources.length > 0) {
+            const sourcesDiv = document.createElement('div');
+            sourcesDiv.className = 'text-xs text-gray-500 pt-2 border-t border-gray-800 mt-2 flex flex-wrap gap-1';
+            sourcesDiv.innerHTML = '<span class="font-semibold mr-1 text-purple-400">Sources:</span>';
+            sources.slice(0, 3).forEach((source, index) => {
+                const link = document.createElement('a');
+                link.href = source.uri;
+                link.target = '_blank';
+                link.className = 'text-blue-400 hover:text-blue-300 transition-colors underline rounded-full px-2 py-0.5 bg-gray-700';
+                link.textContent = `#${index + 1} ${source.title.substring(0, 30)}${source.title.length > 30 ? '...' : ''}`;
+                sourcesDiv.appendChild(link);
+            });
+            contentDiv.appendChild(sourcesDiv);
+        }
+
+        footerDiv.classList.remove('hidden');
+
+        // Add final response to chat history
+        chatHistory.push({ role: 'model', content: content });
+
+        scrollChatToBottom();
+    }
+
+
+    /** Renders the generated image and success message into the bubble. */
+    function renderImageResult(imageUrl, bubble, prompt) {
+        const contentDiv = bubble.querySelector('.markdown-content');
+        contentDiv.classList.add('p-0');
+        
+        contentDiv.innerHTML = `
+            <div class="p-3">
+                <p class="text-sm font-semibold mb-2">${CONFIG.MESSAGES.image_success}</p>
+                <img src="${imageUrl}" alt="${prompt}" class="w-full h-auto rounded-lg object-cover shadow-xl" />
+                <p class="text-xs text-gray-500 mt-2 italic">${prompt}</p>
+            </div>
+        `;
+    }
+
+    /** Renders a single chat message bubble. */
+    function renderMessage(role, content, isThinking = false) {
+        const chatContainer = document.getElementById('chat-container-scrollable');
+
+        const bubbleContainer = document.createElement('div');
+        bubbleContainer.className = `flex mb-4 max-w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+        
+        const bubble = document.createElement('div');
+        bubble.className = `rounded-xl p-3 max-w-[85%] sm:max-w-[70%] shadow-lg`;
+        bubble.style.backgroundColor = role === 'user' ? 'var(--user-bubble)' : 'var(--ai-bubble)';
+        bubble.style.color = 'var(--text-light)';
+
+        if (role === 'user') {
+            bubble.classList.add('rounded-tr-sm');
+            bubble.innerHTML = `<p class="whitespace-pre-wrap">${content}</p>`;
+        } else {
+            bubble.classList.add('rounded-tl-sm', 'flex', 'flex-col');
+            
+            const contentDiv = document.createElement('div');
+            // Set text direction based on selected language for correct display
+            const textDirection = (currentLanguage === 'ku') ? 'rtl' : 'ltr';
+            contentDiv.style.direction = textDirection;
+
+            contentDiv.className = `markdown-content pb-2`;
+
+            if (isThinking) {
+                // Simplified thinking animation
+                contentDiv.innerHTML = `<i data-lucide="loader" class="w-6 h-6 animate-spin text-gray-500"></i>`;
+            } else {
+                contentDiv.innerHTML = converter.makeHtml(content);
+            }
+            bubble.appendChild(contentDiv);
+
+            const footerDiv = document.createElement('div');
+            footerDiv.className = `ai-bubble-footer pt-2 flex justify-end text-xs space-x-3 text-gray-400 ${isThinking ? 'hidden' : ''}`;
+
+            const actions = [
+                { icon: 'copy', action: () => copyToClipboard(content) },
+                { icon: 'volume-2', action: () => showFeatureNotAvailable(CONFIG.MESSAGES.action_tts) },
+                { icon: 'rotate-cw', action: () => showFeatureNotAvailable(CONFIG.MESSAGES.action_regenerate) },
+                { icon: 'thumbs-up', action: () => showToast(CONFIG.MESSAGES.action_like) },
+                { icon: 'thumbs-down', action: () => showToast(CONFIG.MESSAGES.action_dislike) },
+            ];
+
+            actions.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'hover:text-white transition-colors p-1';
+                btn.innerHTML = `<i data-lucide="${item.icon}" class="w-4 h-4"></i>`;
+                btn.onclick = item.action;
+                footerDiv.appendChild(btn);
+            });
+
+            bubble.appendChild(footerDiv);
+        }
+
+        bubbleContainer.appendChild(bubble);
+        chatContainer.appendChild(bubbleContainer);
+
+        lucide.createIcons();
+        scrollChatToBottom();
+        return bubbleContainer;
+    }
+
+    /** Scrolls the chat container to the bottom. */
+    function scrollChatToBottom() {
+        const container = document.getElementById('chat-container-scrollable');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    /** Displays a temporary toast notification. */
+    function showToast(message) {
+        let toast = document.getElementById('chat-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'chat-toast';
+            toast.className = 'fixed bottom-24 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-700 text-white text-sm rounded-full shadow-lg transition-opacity duration-300 z-50 opacity-0';
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = message;
+        toast.classList.remove('opacity-0');
+        toast.classList.add('opacity-100');
+
+        clearTimeout(toast.timer);
+        toast.timer = setTimeout(() => {
+            toast.classList.remove('opacity-100');
+            toast.classList.add('opacity-0');
+        }, 3000);
+    }
+
+    /** Copies text content to the clipboard and shows a toast. */
+    function copyToClipboard(text) {
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        showToast(CONFIG.MESSAGES.action_copy_success);
+    }
+
+    /** Displays a feature not available message using the toast notification. */
+    function showFeatureNotAvailable(featureName) {
+        const message = CONFIG.MESSAGES.action_feature_not_available(featureName);
+        showToast(message);
+    }
+
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Bind Enter key to send message
+        document.getElementById('chat-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('send-button').click();
+            }
+        });
+
+        // 2. Load recent chats from local storage
+        loadRecentChats();
+        
+        // 3. Set the initial language UI (English)
+        updateUIForLanguage();
+
+        // 4. Initialize Lucide icons
+        lucide.createIcons();
+    });
+</script>
+</body>
+</html>
+
