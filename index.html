@@ -7,9 +7,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons for better aesthetic and more icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Showdown for Markdown rendering -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
 
     <style>
@@ -89,13 +87,11 @@
 </head>
 <body class="flex flex-col h-screen antialiased">
 
-    <!-- SIDEBAR BACKDROP & MENU -->
     <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-75 z-40 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
 
 
     <aside id="sidebar-menu" class="fixed top-0 left-0 h-full w-64 bg-black z-50 transform -translate-x-full transition-transform duration-300 shadow-2xl flex flex-col justify-between p-4 border-r border-gray-900">
 
-        <!-- TOP SECTION: Search & Main Links -->
         <div>
 
             <div class="flex items-center justify-between p-2 mb-4">
@@ -126,7 +122,6 @@
 
             </div>
 
-            <!-- RECENT CHATS -->
             <div class="mt-6">
                 <h3 class="text-xs font-semibold uppercase text-gray-500 mb-2 px-3">Recent Chats</h3>
                 <div class="space-y-1">
@@ -137,7 +132,6 @@
         </div>
 
 
-        <!-- BOTTOM SECTION: User Profile/Settings -->
         <div class="border-t border-gray-800 pt-4">
 
             <a href="#" onclick="showFeatureNotAvailable('User Profile')" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors">
@@ -149,15 +143,12 @@
     </aside>
 
 
-    <!-- HEADER -->
     <header class="flex justify-between items-center p-4 h-16 sticky top-0 bg-black z-20 border-b border-gray-900">
 
-        <!-- Left: Sidebar Toggle / Back Button (on desktop) -->
         <button onclick="toggleSidebar()" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Open menu">
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
 
-        <!-- Center: Get Plus Button -->
         <div class="flex-grow flex justify-center">
             <button onclick="showFeatureNotAvailable('Get Plus')" class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
                 <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
@@ -165,20 +156,17 @@
             </button>
         </div>
 
-        <!-- Right: New Chat Button -->
         <button onclick="clearChat()" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Start new chat">
             <i data-lucide="rotate-cw" class="w-6 h-6"></i>
         </button>
     </header>
 
 
-    <!-- MAIN CHAT/HOME CONTENT -->
     <main id="main-content" class="flex-grow flex flex-col items-center justify-start p-4 overflow-y-auto" role="log">
 
-        <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4">
+        <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4 hidden">
             <h1 class="text-3xl font-semibold mb-10 mt-16 text-center">What can I help with?</h1>
 
-            <!-- Prompt Suggestions with ChatGPT-like style -->
             <div id="suggestion-buttons" class="flex flex-wrap justify-center gap-3 w-full px-4 sm:px-0">
 
                 <button onclick="setPrompt(CONFIG.PROMPTS.image.trim())" class="prompt-button">
@@ -201,13 +189,11 @@
         </div>
 
 
-        <div id="chat-container-scrollable" class="hidden w-full h-full max-w-2xl mx-auto overflow-y-auto pt-4 pb-20">
-
-        </div>
+        <div id="chat-container-scrollable" class="w-full h-full max-w-2xl mx-auto overflow-y-auto pt-4 pb-20">
+            </div>
 
     </main>
 
-    <!-- ADD TOOLS MODAL OVERLAY -->
     <div id="add-tools-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-90 flex flex-col pt-16">
         <div class="absolute top-0 left-0 w-full p-4 flex justify-start">
             <button onclick="closeAddToolsModal()" class="text-white p-2" aria-label="Close tools menu">
@@ -215,20 +201,16 @@
             </button>
         </div>
 
-        <!-- Top Grid of Primary Actions (Camera, Photos, Files) -->
         <div class="w-full px-8 mb-8 mt-4">
             <div class="grid grid-cols-3 gap-4 max-w-sm mx-auto">
-                <!-- Camera -->
                 <button onclick="handleToolAction('Camera')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="camera" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Camera</p>
                 </button>
-                <!-- Photos -->
                 <button onclick="handleToolAction('Photos')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="image" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Photos</p>
                 </button>
-                <!-- Files -->
                 <button onclick="handleToolAction('Files')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="folder" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Files</p>
@@ -236,9 +218,7 @@
             </div>
         </div>
 
-        <!-- Tools List -->
         <div class="flex-grow overflow-y-auto px-6 space-y-2">
-            <!-- Create Image -->
             <button onclick="handleToolAction('Create image', CONFIG.PROMPTS.image)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="image" class="w-6 h-6 mr-4 text-green-400"></i>
                 <div>
@@ -247,7 +227,6 @@
                 </div>
             </button>
 
-            <!-- Thinking -->
             <button onclick="handleToolAction('Thinking', CONFIG.PROMPTS.thinking)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="lightbulb" class="w-6 h-6 mr-4 text-yellow-400"></i>
                 <div>
@@ -256,7 +235,6 @@
                 </div>
             </button>
 
-            <!-- Deep research -->
             <button onclick="handleToolAction('Deep research', CONFIG.PROMPTS.research)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="flask-round" class="w-6 h-6 mr-4 text-red-400"></i>
                 <div>
@@ -265,7 +243,6 @@
                 </div>
             </button>
 
-            <!-- Web search -->
             <button onclick="handleToolAction('Web search', CONFIG.PROMPTS.search)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="globe" class="w-6 h-6 mr-4 text-blue-400"></i>
                 <div>
@@ -274,7 +251,6 @@
                 </div>
             </button>
 
-            <!-- Study and learn -->
             <button onclick="handleToolAction('Study and learn', CONFIG.PROMPTS.study)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="book-open-text" class="w-6 h-6 mr-4 text-purple-400"></i>
                 <div>
@@ -284,7 +260,6 @@
             </button>
         </div>
 
-        <!-- Explore Tools Button -->
         <div class="p-6">
             <button onclick="handleToolAction('Explore tools')" class="w-full py-3 rounded-full font-bold text-center transition-colors" style="background-color: var(--ai-bubble); color: var(--text-light);">
                 Explore tools
@@ -293,18 +268,15 @@
     </div>
 
 
-    <!-- INPUT BAR / FOOTER (ChatGPT Style) -->
     <footer id="input-container" class="fixed bottom-0 w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
         <div class="w-full flex items-end p-2 rounded-2xl border" style="background-color: var(--input-dark); border-color: var(--input-border);">
 
-            <!-- Left: Attachment/Tools Button (Always visible) -->
             <button id="attachment-button" onclick="openAddToolsModal()"
                     class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors"
                     aria-label="Add attachment or open tools">
                 <i data-lucide="plus" class="w-6 h-6"></i>
             </button>
 
-            <!-- Center: Input Wrapper -->
             <div class="flex flex-grow items-center mx-1">
                 <input id="chat-input"
                        type="text"
@@ -313,20 +285,15 @@
                        class="w-full bg-transparent text-white focus:outline-none py-2 text-base">
             </div>
 
-            <!-- Right: Send or Mic/Wave Button -->
-
-            <!-- Send Button (Hidden by default) -->
             <button id="send-button" onclick="handleSendMessage()"
                     class="flex-shrink-0 p-2 text-blue-400 hover:text-blue-300 transition-colors hidden"
                     aria-label="Send message">
                 <i data-lucide="send" class="w-6 h-6"></i>
             </button>
 
-            <!-- Mic/Wave Button (Visible when input is empty) -->
             <button id="mic-button" onclick="showFeatureNotAvailable('Voice Input')"
                     class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors"
                     aria-label="Voice input">
-                <!-- Using a wave icon to represent the voice prompt indicator -->
                 <i data-lucide="volume-2" class="w-6 h-6"></i>
             </button>
 
@@ -352,6 +319,15 @@
             study: 'Explain the concept of neural networks in simple terms.',
         },
         MESSAGES: {
+            // New static message for on-load display
+            INTRO_MESSAGE: `This is a functional clone of the **ChatGPT mobile interface**. It uses:
+* **Tailwind CSS** for a responsive, dark-mode design.
+* **Showdown.js** to render content using Markdown, supporting lists, bold text, and code blocks.
+* A JavaScript simulation to demonstrate **response streaming** (typing effect).
+
+Feel free to try any of the prompt suggestions or type your own question!
+
+*What would you like to ask or change in the UI next?*`,
             action_copy_success: 'Content copied to clipboard!',
             action_copied: 'Copied.',
             action_tts: 'Text-to-Speech is playing the response now.',
@@ -412,8 +388,14 @@
         const chatContainer = document.getElementById('chat-container-scrollable');
         const homeScreen = document.getElementById('home-screen');
         chatContainer.innerHTML = '';
-        chatContainer.classList.add('hidden');
-        homeScreen.classList.remove('hidden');
+        // FIX: The original code showed home screen after clearing. Let's stick to the current chat view for a real chat experience.
+        // If you want the home screen back, uncomment the next two lines:
+        // chatContainer.classList.add('hidden');
+        // homeScreen.classList.remove('hidden'); 
+        
+        // Re-render the introductory message after clearing
+        renderInitialMessage(); 
+
         document.getElementById('chat-input').value = '';
         checkInputStatus();
     }
@@ -484,7 +466,7 @@
 
         if (userPrompt === '' || isTyping) return;
 
-        // 1. Hide home screen and show chat container
+        // 1. Hide home screen and show chat container (only needed if home screen was visible)
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('chat-container-scrollable').classList.remove('hidden');
 
@@ -511,17 +493,14 @@
      * @param {HTMLElement} thinkingBubble - The bubble element to stream into.
      */
     async function simulateApiCall(prompt, thinkingBubble) {
-        // Prepare a dummy response based on the prompt
-        let responseContent = `You asked about: **${prompt}**.
+        // --- FIX: The introductory content is now moved to the initialization step ---
+        // A generic response for a new prompt
+        let responseContent = `Thank you for your question about: **${prompt}**. 
+        
+This is a simulated response. In a real application, this is where the KurdishGPT model's answer would appear.
 
-This is a functional clone of the **ChatGPT mobile interface**. It uses:
-* **Tailwind CSS** for a responsive, dark-mode design.
-* **Showdown.js** to render content using Markdown, supporting lists, bold text, and code blocks.
-* A JavaScript simulation to demonstrate **response streaming** (typing effect).
+How else can I assist you with your project or answer your question?`;
 
-Feel free to try any of the prompt suggestions or type your own question!
-
-*What would you like to ask or change in the UI next?*`;
 
         // Start streaming simulation
         await streamResponse(responseContent, thinkingBubble);
@@ -576,6 +555,22 @@ Feel free to try any of the prompt suggestions or type your own question!
         scrollChatToBottom();
     }
 
+    /**
+     * Renders the initial AI message on page load, simulating a completed response.
+     */
+    function renderInitialMessage() {
+        const content = CONFIG.MESSAGES.INTRO_MESSAGE;
+        // NOTE: We call renderMessage but disable the streaming/typing effect for the initial message
+        const bubbleContainer = renderMessage('model', content, false);
+        // Manually ensure the footer is visible since isThinking is false
+        const footerDiv = bubbleContainer.querySelector('.ai-bubble-footer');
+        if (footerDiv) {
+            footerDiv.classList.remove('hidden');
+        }
+        chatHistory.push({ role: 'model', content: content });
+        scrollChatToBottom();
+    }
+
 
     /**
      * Renders a single chat message bubble.
@@ -619,12 +614,13 @@ Feel free to try any of the prompt suggestions or type your own question!
 
             // Footer (Actions)
             const footerDiv = document.createElement('div');
+            // If isThinking is false (static initial message), the footer should be visible by default
             footerDiv.className = `ai-bubble-footer pt-2 flex justify-end text-xs space-x-3 text-gray-400 ${isThinking ? 'hidden' : ''}`;
 
             const actions = [
                 { icon: 'copy', action: () => copyToClipboard(content) },
-                { icon: 'volume-2', action: () => showFeatureNotAvailable(CONFIG.MESSAGES.action_tts) },
-                { icon: 'rotate-cw', action: () => showFeatureNotAvailable(CONFIG.MESSAGES.action_regenerate) },
+                { icon: 'volume-2', action: () => showFeatureNotAvailable('Text-to-Speech') },
+                { icon: 'rotate-cw', action: () => showFeatureNotAvailable('Regenerate') },
                 { icon: 'thumbs-up', action: () => showToast(CONFIG.MESSAGES.action_like) },
                 { icon: 'thumbs-down', action: () => showToast(CONFIG.MESSAGES.action_dislike) },
             ];
@@ -705,10 +701,15 @@ Feel free to try any of the prompt suggestions or type your own question!
             }
         });
 
+        // FIX: Remove initial 'hidden' class from chat-container if you want the message to appear immediately
+        document.getElementById('chat-container-scrollable').classList.remove('hidden');
+
+        // NEW: Render the introductory message on load
+        renderInitialMessage();
+
         // Initialize Lucide icons
         lucide.createIcons();
     });
 </script>
 </body>
 </html>
-
