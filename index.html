@@ -11,10 +11,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Showdown for Markdown rendering -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
-    
-    <!-- Load configuration and app script -->
-    <script type="module" src="config.js"></script>
-    <script type="module" src="script.js"></script>
 
     <style>
         /* --- CSS Variables and Dark Mode Styling --- */
@@ -161,11 +157,11 @@
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
 
-        <!-- Center: Get Plus Button -->
+        <!-- Center: Language Toggle Button -->
         <div class="flex-grow flex justify-center">
-            <button onclick="showFeatureNotAvailable('Get Plus')" class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
-                <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
-                Get Plus
+            <button id="language-toggle" onclick="toggleLanguage()" class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
+                <i data-lucide="globe" class="w-4 h-4 mr-2"></i>
+                <span id="current-language">English</span>
             </button>
         </div>
 
@@ -337,5 +333,593 @@
         </div>
     </footer>
 
+
+<script>
+    // --- GLOBAL STATE AND CONFIG ---
+    let chatHistory = [];
+    let isTyping = false;
+
+    // Current language state
+    let currentLanguage = 'en';
+
+    // Translation dictionary
+    const TRANSLATIONS = {
+        en: {
+            language: 'English',
+            askPrompt: 'Ask KurdishGPT',
+            whatCanIHelp: 'What can I help with?',
+            createImage: 'Create image',
+            summarizeText: 'Summarize text',
+            brainstorm: 'Brainstorm',
+            more: 'More',
+            newChat: 'New chat',
+            library: 'Library',
+            gpts: 'GPTs',
+            recentChats: 'Recent Chats',
+            noRecentChats: 'No recent chats',
+            search: 'Search',
+            camera: 'Camera',
+            photos: 'Photos',
+            files: 'Files',
+            exploreTools: 'Explore tools',
+            thinking: 'Thinking',
+            deepResearch: 'Deep research',
+            webSearch: 'Web search',
+            studyAndLearn: 'Study and learn',
+            visualizeAnything: 'Visualize anything',
+            thinkLonger: 'Think longer for better answers',
+            getDetailedReport: 'Get a detailed report',
+            findRealtimeNews: 'Find real-time news and info',
+            learnNewConcept: 'Learn a new concept'
+        },
+        ckb: {
+            language: 'کوردیی ناوەندی',
+            askPrompt: 'پرسیار لە کوردیشGPT بکە',
+            whatCanIHelp: 'چۆن دەتوانم یارمەتیت بدەم؟',
+            createImage: 'دروستکردنی وێنە',
+            summarizeText: 'پوختەکردنی دەق',
+            brainstorm: 'بیرکردنەوە',
+            more: 'زیاتر',
+            newChat: 'گفتوگۆی نوێ',
+            library: 'کتێبخانە',
+            gpts: 'GPTـەکان',
+            recentChats: 'گفتوگۆی دوایی',
+            noRecentChats: 'گفتوگۆی دوایی نییە',
+            search: 'گەڕان',
+            camera: 'کامێرا',
+            photos: 'وێنەکان',
+            files: 'فایلەکان',
+            exploreTools: 'گەڕان بە ئامرازەکان',
+            thinking: 'بیرکردنەوە',
+            deepResearch: 'لێکۆڵینەوەی قووڵ',
+            webSearch: 'گەڕانی ئینتەرنێت',
+            studyAndLearn: 'خوێندن و فێربوون',
+            visualizeAnything: 'هەموو شتێک بینراو بکە',
+            thinkLonger: 'بیرکردنەوەی درێژتر بۆ وەڵامی باشتر',
+            getDetailedReport: 'ڕاپۆرتێکی ورد وەربگرە',
+            findRealtimeNews: 'هەواڵ و زانیاریی ڕاستەوخۆ بدۆزەرەوە',
+            learnNewConcept: 'چەمکێکی نوێ فێربە'
+        }
+    };
+
+    // Configuration for static text and prompts
+    const CONFIG = {
+        PROMPTS: {
+            image: 'Generate a high-quality image of ',
+            summarize: 'Summarize the plot of ',
+            brainstorm: 'Brainstorm 5 ideas for a startup in Erbil.',
+            more: 'What are some fun facts about the Kurdistan Region of Iraq?',
+            thinking: 'Analyze the historical significance of the Medes.',
+            research: 'Write a deep report on the future of Kurdish language technology.',
+            search: 'What is the current price of oil?',
+            study: 'Explain the concept of neural networks in simple terms.',
+        },
+        MESSAGES: {
+            action_copy_success: 'Content copied to clipboard!',
+            action_copied: 'Copied.',
+            action_tts: 'Text-to-Speech is playing the response now.',
+            action_regenerate: 'Regenerating response...',
+            action_like: 'Thanks for the feedback!',
+            action_dislike: 'Thanks for the feedback. We will improve.',
+            action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
+            error_api_call_failed: 'Failed to get a response from the API.',
+        }
+    };
+
+    // Markdown Converter Setup
+    const converter = new showdown.Converter({
+        tables: true,
+        strikethrough: true,
+        tasklists: true,
+        simpleLineBreaks: true
+    });
+
+
+    // --- CHAT INTERFACE FUNCTIONS ---
+
+    /**
+     * Displays a feature not available message using the toast notification.
+     * @param {string} featureName - The name of the feature (e.g., 'Library').
+     */
+    function showFeatureNotAvailable(featureName) {
+        const message = CONFIG.MESSAGES.action_feature_not_available(featureName);
+        showToast(message);
+    }
+
+    /**
+     * Toggles the sidebar visibility.
+     */
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar-menu');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        const isOpen = sidebar.classList.contains('translate-x-0');
+
+        if (isOpen) {
+            sidebar.classList.remove('translate-x-0');
+            sidebar.classList.add('-translate-x-full');
+            backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
+        } else {
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
+            backdrop.classList.add('opacity-100', 'pointer-events-auto');
+        }
+    }
+
+    /**
+     * Clears the chat history and resets the view to the home screen.
+     */
+    function clearChat() {
+        chatHistory = [];
+        const chatContainer = document.getElementById('chat-container-scrollable');
+        const homeScreen = document.getElementById('home-screen');
+        chatContainer.innerHTML = '';
+        chatContainer.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
+        document.getElementById('chat-input').value = '';
+        checkInputStatus();
+    }
+
+    /**
+     * Sets the text input value and focuses it. Used by suggestion buttons.
+     * @param {string} prompt - The text to put into the input field.
+     */
+    function setPrompt(prompt) {
+        document.getElementById('chat-input').value = prompt;
+        document.getElementById('chat-input').focus();
+        checkInputStatus();
+    }
+
+    /**
+     * Opens the Add Tools modal.
+     */
+    function openAddToolsModal() {
+        const modal = document.getElementById('add-tools-modal');
+        modal.classList.remove('hidden');
+    }
+
+    /**
+     * Closes the Add Tools modal.
+     */
+    function closeAddToolsModal() {
+        document.getElementById('add-tools-modal').classList.add('hidden');
+    }
+
+    /**
+     * Handles an action from the tools modal (e.g., Camera, Create Image).
+     * @param {string} tool - The name of the tool.
+     * @param {string} [prompt=''] - Optional prompt to set in the chat input.
+     */
+    function handleToolAction(tool, prompt = '') {
+        closeAddToolsModal();
+        if (prompt) {
+            setPrompt(prompt);
+        } else {
+            // For features like Camera/Photos/Files/Explore Tools, show toast
+            showFeatureNotAvailable(tool);
+        }
+    }
+
+    /**
+     * Switches the input bar buttons between Mic/Wave and Send based on input text.
+     */
+    function checkInputStatus() {
+        const input = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const micButton = document.getElementById('mic-button');
+
+        if (input.value.trim().length > 0) {
+            sendButton.classList.remove('hidden');
+            micButton.classList.add('hidden');
+        } else {
+            sendButton.classList.add('hidden');
+            micButton.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Main function to handle sending a message (user prompt).
+     */
+    function handleSendMessage() {
+        const inputElement = document.getElementById('chat-input');
+        const userPrompt = inputElement.value.trim();
+
+        if (userPrompt === '' || isTyping) return;
+
+        // 1. Hide home screen and show chat container
+        document.getElementById('home-screen').classList.add('hidden');
+        document.getElementById('chat-container-scrollable').classList.remove('hidden');
+
+        // 2. Add user message to history and render
+        chatHistory.push({ role: 'user', content: userPrompt });
+        renderMessage('user', userPrompt);
+
+        // 3. Clear input and disable
+        inputElement.value = '';
+        checkInputStatus();
+        inputElement.setAttribute('disabled', 'true');
+        isTyping = true;
+
+        // 4. Render AI thinking/typing bubble
+        const thinkingBubble = renderMessage('model', '', true);
+
+        // 5. Simulate API call
+        simulateApiCall(userPrompt, thinkingBubble);
+    }
+
+    /**
+     * Simulates the async API call to Gemini.
+     * @param {string} prompt - The user's prompt.
+     * @param {HTMLElement} thinkingBubble - The bubble element to stream into.
+     */
+    async function simulateApiCall(prompt, thinkingBubble) {
+        // Prepare a dummy response based on the prompt
+        let responseContent = `You asked about: **${prompt}**.
+
+This is a functional clone of the **ChatGPT mobile interface**. It uses:
+* **Tailwind CSS** for a responsive, dark-mode design.
+* **Showdown.js** to render content using Markdown, supporting lists, bold text, and code blocks.
+* A JavaScript simulation to demonstrate **response streaming** (typing effect).
+
+Feel free to try any of the prompt suggestions or type your own question!
+
+*What would you like to ask or change in the UI next?*`;
+
+        // Start streaming simulation
+        await streamResponse(responseContent, thinkingBubble);
+
+        // Re-enable input
+        const inputElement = document.getElementById('chat-input');
+        inputElement.removeAttribute('disabled');
+        isTyping = false;
+        inputElement.focus();
+    }
+
+
+    /**
+     * Simulates the streaming effect of a response.
+     * @param {string} content - The full response text.
+     * @param {HTMLElement} bubble - The target bubble element.
+     */
+    async function streamResponse(content, bubble) {
+        const contentDiv = bubble.querySelector('.markdown-content');
+        const footerDiv = bubble.querySelector('.ai-bubble-footer');
+
+        const totalChunks = content.length;
+        let streamedText = '';
+
+        // Remove the loading ellipsis
+        contentDiv.innerHTML = `<span class="typing-cursor"></span>`;
+
+        // Simulate chunk delivery
+        for (let i = 0; i < totalChunks; i++) {
+            streamedText += content[i];
+
+            // Only update DOM every N characters or if it's the last character
+            if (i % 10 === 0 || i === totalChunks - 1) {
+                const htmlContent = converter.makeHtml(streamedText);
+                contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
+                scrollChatToBottom();
+            }
+            await new Promise(resolve => setTimeout(resolve, 5)); // Fast typing
+        }
+
+        // Finalize the content
+        contentDiv.innerHTML = converter.makeHtml(content);
+        contentDiv.setAttribute('data-original-text', content);
+        // Safely remove the cursor (it might not be there if the content was very short)
+        const cursor = bubble.querySelector('.typing-cursor');
+        if (cursor) cursor.remove();
+        
+        footerDiv.classList.remove('hidden');
+
+        // Add to chat history
+        chatHistory.push({ role: 'model', content: content });
+        
+        // If current language is Kurdish, translate the message
+        if (currentLanguage === 'ckb') {
+            const translatedContent = await translateText(content, 'ckb');
+            contentDiv.innerHTML = converter.makeHtml(translatedContent);
+        }
+
+        scrollChatToBottom();
+    }
+
+
+    /**
+     * Renders a single chat message bubble.
+     * @param {string} role - 'user' or 'model'.
+     * @param {string} content - The message content (will be Markdown-rendered for 'model').
+     * @param {boolean} isThinking - If true, displays a typing/loading state.
+     * @returns {HTMLElement} - The newly created bubble element.
+     */
+    function renderMessage(role, content, isThinking = false) {
+        const chatContainer = document.getElementById('chat-container-scrollable');
+
+        // Main Bubble Container
+        const bubbleContainer = document.createElement('div');
+        bubbleContainer.className = `flex mb-4 max-w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+        bubbleContainer.style.direction = 'ltr'; // Ensure LTR for English/Code
+
+        // Content Wrapper
+        const bubble = document.createElement('div');
+        bubble.className = `rounded-xl p-3 max-w-[85%] sm:max-w-[70%] shadow-lg`;
+        bubble.style.backgroundColor = role === 'user' ? 'var(--user-bubble)' : 'var(--ai-bubble)';
+        bubble.style.color = 'var(--text-light)';
+
+        if (role === 'user') {
+            bubble.classList.add('rounded-tr-sm');
+            const userParagraph = document.createElement('p');
+            userParagraph.className = 'whitespace-pre-wrap';
+            userParagraph.textContent = content;
+            userParagraph.setAttribute('data-original-text', content);
+            bubble.appendChild(userParagraph);
+        } else {
+            bubble.classList.add('rounded-tl-sm', 'flex', 'flex-col');
+            bubble.style.textAlign = 'left';
+
+            // Content Area
+            const contentDiv = document.createElement('div');
+            contentDiv.className = `markdown-content pb-2`;
+
+            if (isThinking) {
+                // Initial content for thinking state
+                contentDiv.innerHTML = `<i data-lucide="ellipsis" class="w-6 h-6 animate-pulse"></i>`;
+            } else {
+                contentDiv.innerHTML = converter.makeHtml(content);
+            }
+            bubble.appendChild(contentDiv);
+
+            // Footer (Actions)
+            const footerDiv = document.createElement('div');
+            footerDiv.className = `ai-bubble-footer pt-2 flex justify-end text-xs space-x-3 text-gray-400 ${isThinking ? 'hidden' : ''}`;
+
+            const actions = [
+                { icon: 'copy', action: () => copyToClipboard(content) },
+                { icon: 'volume-2', action: () => showFeatureNotAvailable(CONFIG.MESSAGES.action_tts) },
+                { icon: 'rotate-cw', action: () => showFeatureNotAvailable(CONFIG.MESSAGES.action_regenerate) },
+                { icon: 'thumbs-up', action: () => showToast(CONFIG.MESSAGES.action_like) },
+                { icon: 'thumbs-down', action: () => showToast(CONFIG.MESSAGES.action_dislike) },
+            ];
+
+            // Render action buttons
+            actions.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'hover:text-white transition-colors p-1';
+                btn.innerHTML = `<i data-lucide="${item.icon}" class="w-4 h-4"></i>`;
+                btn.onclick = item.action;
+                footerDiv.appendChild(btn);
+            });
+
+            bubble.appendChild(footerDiv);
+        }
+
+        bubbleContainer.appendChild(bubble);
+        chatContainer.appendChild(bubbleContainer);
+
+        // Re-render Lucide icons
+        lucide.createIcons();
+        scrollChatToBottom();
+        return bubbleContainer; // Return container for streaming/thinking updates
+    }
+
+
+    /** Scrolls the chat container to the bottom. */
+    function scrollChatToBottom() {
+        const container = document.getElementById('chat-container-scrollable');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    /**
+     * Displays a temporary toast notification.
+     * @param {string} message - The message to display.
+     */
+    function showToast(message) {
+        let toast = document.getElementById('chat-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'chat-toast';
+            toast.className = 'fixed bottom-24 left-1/2 transform -translate-x-1/2 px-4 py-2 bg-gray-700 text-white text-sm rounded-full shadow-lg transition-opacity duration-300 z-50 opacity-0';
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = message;
+        toast.classList.remove('opacity-0');
+        toast.classList.add('opacity-100');
+
+        clearTimeout(toast.timer);
+        toast.timer = setTimeout(() => {
+            toast.classList.remove('opacity-100');
+            toast.classList.add('opacity-0');
+        }, 3000);
+    }
+
+    /**
+     * Copies text content to the clipboard and shows a toast.
+     * @param {string} text - The text to copy.
+     */
+    function copyToClipboard(text) {
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        showToast(CONFIG.MESSAGES.action_copy_success);
+    }
+
+    // --- TRANSLATION FUNCTIONS ---
+    
+    /**
+     * Toggles between English and Kurdish languages
+     */
+    function toggleLanguage() {
+        currentLanguage = currentLanguage === 'en' ? 'ckb' : 'en';
+        updateUILanguage();
+        translateChatMessages();
+    }
+
+    /**
+     * Updates all UI elements with the current language
+     */
+    function updateUILanguage() {
+        const t = TRANSLATIONS[currentLanguage];
+        
+        document.getElementById('current-language').textContent = t.language;
+        
+        document.getElementById('chat-input').placeholder = t.askPrompt;
+        
+        const homeScreen = document.getElementById('home-screen');
+        if (homeScreen) {
+            const heading = homeScreen.querySelector('h1');
+            if (heading) heading.textContent = t.whatCanIHelp;
+        }
+        
+        const suggestionButtons = document.querySelectorAll('#suggestion-buttons button');
+        if (suggestionButtons.length >= 4) {
+            suggestionButtons[0].querySelector('span').textContent = t.createImage;
+            suggestionButtons[1].querySelector('span').textContent = t.summarizeText;
+            suggestionButtons[2].querySelector('span').textContent = t.brainstorm;
+            suggestionButtons[3].querySelector('span').textContent = t.more;
+        }
+        
+        const sidebarLinks = document.querySelectorAll('#sidebar-menu a span');
+        if (sidebarLinks.length >= 3) {
+            sidebarLinks[0].textContent = t.newChat;
+            sidebarLinks[1].textContent = t.library;
+            sidebarLinks[2].textContent = t.gpts;
+        }
+        
+        const recentChatsHeading = document.querySelector('#sidebar-menu h3');
+        if (recentChatsHeading) recentChatsHeading.textContent = t.recentChats;
+        
+        const noRecentChats = document.querySelector('#sidebar-menu .text-gray-600');
+        if (noRecentChats) noRecentChats.textContent = t.noRecentChats;
+        
+        const searchInput = document.querySelector('#sidebar-menu input[type=\"text\"]');
+        if (searchInput) searchInput.placeholder = t.search;
+        
+        const toolsModal = document.getElementById('add-tools-modal');
+        if (toolsModal) {
+            const toolButtons = toolsModal.querySelectorAll('button');
+            toolButtons.forEach(btn => {
+                const text = btn.querySelector('p');
+                if (text) {
+                    const originalText = text.textContent;
+                    if (originalText === 'Camera' || originalText === t.camera) text.textContent = t.camera;
+                    else if (originalText === 'Photos' || originalText === t.photos) text.textContent = t.photos;
+                    else if (originalText === 'Files' || originalText === t.files) text.textContent = t.files;
+                    else if (originalText === 'Explore tools' || originalText === t.exploreTools) text.textContent = t.exploreTools;
+                    else if (originalText === 'Create image' || originalText === t.createImage) text.textContent = t.createImage;
+                    else if (originalText === 'Thinking' || originalText === t.thinking) text.textContent = t.thinking;
+                    else if (originalText === 'Deep research' || originalText === t.deepResearch) text.textContent = t.deepResearch;
+                    else if (originalText === 'Web search' || originalText === t.webSearch) text.textContent = t.webSearch;
+                    else if (originalText === 'Study and learn' || originalText === t.studyAndLearn) text.textContent = t.studyAndLearn;
+                }
+                
+                const desc = btn.querySelector('.text-xs.text-gray-400');
+                if (desc) {
+                    const originalDesc = desc.textContent;
+                    if (originalDesc === 'Visualize anything' || originalDesc === t.visualizeAnything) desc.textContent = t.visualizeAnything;
+                    else if (originalDesc === 'Think longer for better answers' || originalDesc === t.thinkLonger) desc.textContent = t.thinkLonger;
+                    else if (originalDesc === 'Get a detailed report' || originalDesc === t.getDetailedReport) desc.textContent = t.getDetailedReport;
+                    else if (originalDesc === 'Find real-time news and info' || originalDesc === t.findRealtimeNews) desc.textContent = t.findRealtimeNews;
+                    else if (originalDesc === 'Learn a new concept' || originalDesc === t.learnNewConcept) desc.textContent = t.learnNewConcept;
+                }
+            });
+        }
+        
+        lucide.createIcons();
+    }
+
+    /**
+     * Translates all chat messages using Google Translate API
+     */
+    async function translateChatMessages() {
+        const chatContainer = document.getElementById('chat-container-scrollable');
+        const userMessages = chatContainer.querySelectorAll('.whitespace-pre-wrap[data-original-text]');
+        const aiMessages = chatContainer.querySelectorAll('.markdown-content[data-original-text]');
+        
+        for (const messageElement of userMessages) {
+            const originalText = messageElement.getAttribute('data-original-text');
+            
+            if (currentLanguage === 'ckb') {
+                const translatedText = await translateText(originalText, 'ckb');
+                messageElement.textContent = translatedText;
+            } else {
+                messageElement.textContent = originalText;
+            }
+        }
+        
+        for (const messageElement of aiMessages) {
+            const originalText = messageElement.getAttribute('data-original-text');
+            
+            if (currentLanguage === 'ckb') {
+                const translatedText = await translateText(originalText, 'ckb');
+                messageElement.innerHTML = converter.makeHtml(translatedText);
+            } else {
+                messageElement.innerHTML = converter.makeHtml(originalText);
+            }
+        }
+    }
+
+    /**
+     * Translates text using Google Translate API
+     * @param {string} text - Text to translate
+     * @param {string} targetLang - Target language code ('ckb' for Kurdish)
+     * @returns {Promise<string>} - Translated text
+     */
+    async function translateText(text, targetLang) {
+        if (!text || text.trim() === '') return text;
+        
+        try {
+            const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
+            const data = await response.json();
+            
+            if (data && data[0]) {
+                return data[0].map(item => item[0]).join('');
+            }
+            return text;
+        } catch (error) {
+            console.error('Translation error:', error);
+            return text;
+        }
+    }
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Bind Enter key to send message
+        document.getElementById('chat-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('send-button').click();
+            }
+        });
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+    });
+</script>
 </body>
 </html>
