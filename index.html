@@ -348,27 +348,13 @@
 
 
 <script>
+import form config "./config";
+    
     // --- GLOBAL STATE ---
     let chatHistory = [];
     let isTyping = false;
     let currentLanguage = 'en'; // Initial state: 'en' (English)
     
-    
-    // --- Configuration (Simulating import config from "./config") ---
-    // This object simulates the content of an external config.js file.
-    const config = {
-        // The API Key MUST be an empty string for the runtime to inject it securely.
-        apiKey: "", 
-        modelName: "gemini-2.0-flash", 
-        imageModelName: "imagen-3.0-generate-002",
-        // The full path will be constructed in the function using v1
-        apiBaseUrlText: "https://generativelanguage.googleapis.com/v1", 
-        // Image generation still uses v1beta endpoint structure for Imagen.
-        apiBaseUrlImage: "https://generativelanguage.googleapis.com/v1beta/models/", 
-        maxTokens: 2048,
-        temperature: 0.7, 
-        enableSearchGrounding: true,
-    };
 
     // Configuration for static text and prompts
     const CONFIG = {
