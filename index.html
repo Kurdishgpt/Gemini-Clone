@@ -348,13 +348,27 @@
 
 
 <script>
-import form config "./config";
-    
     // --- GLOBAL STATE ---
     let chatHistory = [];
     let isTyping = false;
     let currentLanguage = 'en'; // Initial state: 'en' (English)
     
+    
+    // --- Configuration (Simulating import config from "./config") ---
+    // All configuration variables are now centralized here, acting as our 'config' module.
+    const config = {
+        // The API Key MUST be an empty string for the runtime to inject it securely.
+        apiKey: "", 
+        modelName: "gemini-2.0-flash", 
+        imageModelName: "imagen-3.0-generate-002",
+        // The full path will be constructed in the function using v1
+        apiBaseUrlText: "https://generativelanguage.googleapis.com/v1", 
+        // Image generation still uses v1beta endpoint structure for Imagen.
+        apiBaseUrlImage: "https://generativelanguage.googleapis.com/v1beta/models/", 
+        maxTokens: 2048,
+        temperature: 0.7, 
+        enableSearchGrounding: true,
+    };
 
     // Configuration for static text and prompts
     const CONFIG = {
@@ -676,16 +690,12 @@ import form config "./config";
         }
     }
 
-    // --- API HANDLERS (UPDATED to use 'config') ---
+    // --- API HANDLERS (UPDATED to use 'config' directly) ---
 
     /** Calls the Gemini API for TEXT generation. */
     async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
-        // Use the 'config' object instead of GEMINI_CONFIG
-        const apiKey = config.apiKey;
-        const model = config.modelName; 
-        
-        // Use the new v1 base URL and construct the full path
-        const apiUrl = `${config.apiBaseUrlText}/models/${model}:generateContent?key=${apiKey}`;
+        // Use properties of the config object directly for a cleaner call
+        const apiUrl = `${config.apiBaseUrlText}/models/${config.modelName}:generateContent?key=${config.apiKey}`;
 
         // Build the chat history for context
         const contents = chatHistory.map(msg => ({
@@ -778,12 +788,8 @@ import form config "./config";
 
     /** Calls the Imagen API for IMAGE generation. */
     async function generateImage(userPrompt, thinkingBubble) {
-        // Use the 'config' object instead of GEMINI_CONFIG
-        const apiKey = config.apiKey; 
-        const model = config.imageModelName; 
-
-        // Use the dedicated image API base URL
-        const apiUrl = `${config.apiBaseUrlImage}${model}:predict?key=${apiKey}`;
+        // Use properties of the config object directly for a cleaner call
+        const apiUrl = `${config.apiBaseUrlImage}${config.imageModelName}:predict?key=${config.apiKey}`;
         
         // Extract the actual image prompt part
         const imagePrompt = userPrompt.substring(CONFIG.PROMPTS.image.length).trim();
