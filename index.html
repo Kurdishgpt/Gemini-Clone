@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KurdishGPT Mobile Chat (ChatGPT Style)</title>
+    <title>KurdishGPT Mobile Chat (Gemini Powered)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;600;700&display=swap" rel="stylesheet">
@@ -301,10 +301,15 @@
     </footer>
 
 
-<script>
+<script type="module">
+    // FIX: Import the API key from the external config file
+    import { GEMINI_API_KEY } from "./config/config.js";
+
     // --- GLOBAL STATE AND CONFIG ---
     let chatHistory = [];
     let isTyping = false;
+    const GEMINI_MODEL = "gemini-2.5-flash";
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}&alt=sse`;
 
     // Configuration for static text and prompts
     const CONFIG = {
@@ -319,15 +324,15 @@
             study: 'Explain the concept of neural networks in simple terms.',
         },
         MESSAGES: {
-            // New static message for on-load display
-            INTRO_MESSAGE: `This is a functional clone of the **ChatGPT mobile interface**. It uses:
-* **Tailwind CSS** for a responsive, dark-mode design.
-* **Showdown.js** to render content using Markdown, supporting lists, bold text, and code blocks.
-* A JavaScript simulation to demonstrate **response streaming** (typing effect).
+            INTRO_MESSAGE: `Welcome to KurdishGPT, powered by **Google Gemini**!
 
-Feel free to try any of the prompt suggestions or type your own question!
+I am now integrated with the real Gemini API to provide fast, relevant responses.
 
-*What would you like to ask or change in the UI next?*`,
+**To test the real AI:**
+1.  Make sure you've added your API key to \`config/config.js\`.
+2.  Ask me about the history of Kurdistan, or ask for a short story.
+
+*What can I help you with today?*`,
             action_copy_success: 'Content copied to clipboard!',
             action_copied: 'Copied.',
             action_tts: 'Text-to-Speech is playing the response now.',
@@ -335,7 +340,7 @@ Feel free to try any of the prompt suggestions or type your own question!
             action_like: 'Thanks for the feedback!',
             action_dislike: 'Thanks for the feedback. We will improve.',
             action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
-            error_api_call_failed: 'Failed to get a response from the API.',
+            error_api_call_failed: 'Failed to get a response from the API. Check your network or API key.',
         }
     };
 
@@ -350,18 +355,11 @@ Feel free to try any of the prompt suggestions or type your own question!
 
     // --- CHAT INTERFACE FUNCTIONS ---
 
-    /**
-     * Displays a feature not available message using the toast notification.
-     * @param {string} featureName - The name of the feature (e.g., 'Library').
-     */
     function showFeatureNotAvailable(featureName) {
         const message = CONFIG.MESSAGES.action_feature_not_available(featureName);
         showToast(message);
     }
 
-    /**
-     * Toggles the sidebar visibility.
-     */
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar-menu');
         const backdrop = document.getElementById('sidebar-backdrop');
@@ -380,69 +378,38 @@ Feel free to try any of the prompt suggestions or type your own question!
         }
     }
 
-    /**
-     * Clears the chat history and resets the view to the home screen.
-     */
     function clearChat() {
         chatHistory = [];
         const chatContainer = document.getElementById('chat-container-scrollable');
-        const homeScreen = document.getElementById('home-screen');
         chatContainer.innerHTML = '';
-        // FIX: The original code showed home screen after clearing. Let's stick to the current chat view for a real chat experience.
-        // If you want the home screen back, uncomment the next two lines:
-        // chatContainer.classList.add('hidden');
-        // homeScreen.classList.remove('hidden'); 
-        
-        // Re-render the introductory message after clearing
-        renderInitialMessage(); 
-
         document.getElementById('chat-input').value = '';
         checkInputStatus();
+        renderInitialMessage(); 
     }
 
-    /**
-     * Sets the text input value and focuses it. Used by suggestion buttons.
-     * @param {string} prompt - The text to put into the input field.
-     */
     function setPrompt(prompt) {
         document.getElementById('chat-input').value = prompt;
         document.getElementById('chat-input').focus();
         checkInputStatus();
     }
 
-    /**
-     * Opens the Add Tools modal.
-     */
     function openAddToolsModal() {
-        const modal = document.getElementById('add-tools-modal');
-        modal.classList.remove('hidden');
+        document.getElementById('add-tools-modal').classList.remove('hidden');
     }
 
-    /**
-     * Closes the Add Tools modal.
-     */
     function closeAddToolsModal() {
         document.getElementById('add-tools-modal').classList.add('hidden');
     }
 
-    /**
-     * Handles an action from the tools modal (e.g., Camera, Create Image).
-     * @param {string} tool - The name of the tool.
-     * @param {string} [prompt=''] - Optional prompt to set in the chat input.
-     */
     function handleToolAction(tool, prompt = '') {
         closeAddToolsModal();
         if (prompt) {
             setPrompt(prompt);
         } else {
-            // For features like Camera/Photos/Files/Explore Tools, show toast
             showFeatureNotAvailable(tool);
         }
     }
 
-    /**
-     * Switches the input bar buttons between Mic/Wave and Send based on input text.
-     */
     function checkInputStatus() {
         const input = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
@@ -466,103 +433,115 @@ Feel free to try any of the prompt suggestions or type your own question!
 
         if (userPrompt === '' || isTyping) return;
 
-        // 1. Hide home screen and show chat container (only needed if home screen was visible)
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('chat-container-scrollable').classList.remove('hidden');
 
-        // 2. Add user message to history and render
+        // Prepare content for API (role conversion)
+        const chatContents = chatHistory.map(msg => ({
+            role: msg.role === 'model' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+        chatContents.push({ role: 'user', parts: [{ text: userPrompt }] });
+
+        // 1. Add user message to history and render
         chatHistory.push({ role: 'user', content: userPrompt });
         renderMessage('user', userPrompt);
 
-        // 3. Clear input and disable
+        // 2. Clear input and disable
         inputElement.value = '';
         checkInputStatus();
         inputElement.setAttribute('disabled', 'true');
         isTyping = true;
 
-        // 4. Render AI thinking/typing bubble
+        // 3. Render AI thinking/typing bubble
         const thinkingBubble = renderMessage('model', '', true);
 
-        // 5. Simulate API call
-        simulateApiCall(userPrompt, thinkingBubble);
+        // 4. Call real Gemini API
+        streamGeminiResponse(chatContents, thinkingBubble);
     }
 
     /**
-     * Simulates the async API call to Gemini.
-     * @param {string} prompt - The user's prompt.
+     * NEW: Streams the response from the real Gemini API.
+     * @param {Array} contents - The full chat history to send.
      * @param {HTMLElement} thinkingBubble - The bubble element to stream into.
      */
-    async function simulateApiCall(prompt, thinkingBubble) {
-        // --- FIX: The introductory content is now moved to the initialization step ---
-        // A generic response for a new prompt
-        let responseContent = `Thank you for your question about: **${prompt}**. 
-        
-This is a simulated response. In a real application, this is where the KurdishGPT model's answer would appear.
+    async function streamGeminiResponse(contents, thinkingBubble) {
+        const contentDiv = thinkingBubble.querySelector('.markdown-content');
+        const footerDiv = thinkingBubble.querySelector('.ai-bubble-footer');
+        let fullResponse = '';
 
-How else can I assist you with your project or answer your question?`;
-
-
-        // Start streaming simulation
-        await streamResponse(responseContent, thinkingBubble);
-
-        // Re-enable input
-        const inputElement = document.getElementById('chat-input');
-        inputElement.removeAttribute('disabled');
-        isTyping = false;
-        inputElement.focus();
-    }
-
-
-    /**
-     * Simulates the streaming effect of a response.
-     * @param {string} content - The full response text.
-     * @param {HTMLElement} bubble - The target bubble element.
-     */
-    async function streamResponse(content, bubble) {
-        const contentDiv = bubble.querySelector('.markdown-content');
-        const footerDiv = bubble.querySelector('.ai-bubble-footer');
-
-        const totalChunks = content.length;
-        let streamedText = '';
-
-        // Remove the loading ellipsis
+        // Finalize state before stream
         contentDiv.innerHTML = `<span class="typing-cursor"></span>`;
-
-        // Simulate chunk delivery
-        for (let i = 0; i < totalChunks; i++) {
-            streamedText += content[i];
-
-            // Only update DOM every N characters or if it's the last character
-            if (i % 10 === 0 || i === totalChunks - 1) {
-                const htmlContent = converter.makeHtml(streamedText);
-                contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
-                scrollChatToBottom();
-            }
-            await new Promise(resolve => setTimeout(resolve, 5)); // Fast typing
-        }
-
-        // Finalize the content
-        contentDiv.innerHTML = converter.makeHtml(content);
-        // Safely remove the cursor (it might not be there if the content was very short)
-        const cursor = bubble.querySelector('.typing-cursor');
-        if (cursor) cursor.remove();
-        
-        footerDiv.classList.remove('hidden');
-
-        // Add to chat history
-        chatHistory.push({ role: 'model', content: content });
-
         scrollChatToBottom();
+        
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents, config: { stream: true } })
+            });
+
+            if (!response.ok || !response.body) {
+                throw new Error(`API returned status ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                // Decode chunk and process SSE events
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                            
+                            if (text) {
+                                fullResponse += text;
+                                // Update DOM frequently for smooth streaming
+                                const htmlContent = converter.makeHtml(fullResponse);
+                                contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
+                                scrollChatToBottom();
+                            }
+                        } catch (e) {
+                            // Ignore empty or malformed data lines
+                        }
+                    }
+                }
+            }
+
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+            fullResponse = `**Error:** ${CONFIG.MESSAGES.error_api_call_failed}\n\n*Details: ${error.message}*`;
+        } finally {
+            // Cleanup and finalize UI
+            const inputElement = document.getElementById('chat-input');
+            inputElement.removeAttribute('disabled');
+            isTyping = false;
+            inputElement.focus();
+            
+            // Final rendering of the full response
+            contentDiv.innerHTML = converter.makeHtml(fullResponse);
+            const cursor = thinkingBubble.querySelector('.typing-cursor');
+            if (cursor) cursor.remove();
+            footerDiv.classList.remove('hidden');
+
+            // Add final response to chat history
+            chatHistory.push({ role: 'model', content: fullResponse });
+            scrollChatToBottom();
+        }
     }
 
-    /**
-     * Renders the initial AI message on page load, simulating a completed response.
-     */
+
     function renderInitialMessage() {
         const content = CONFIG.MESSAGES.INTRO_MESSAGE;
-        // NOTE: We call renderMessage but disable the streaming/typing effect for the initial message
         const bubbleContainer = renderMessage('model', content, false);
-        // Manually ensure the footer is visible since isThinking is false
         const footerDiv = bubbleContainer.querySelector('.ai-bubble-footer');
         if (footerDiv) {
             footerDiv.classList.remove('hidden');
@@ -572,22 +551,13 @@ How else can I assist you with your project or answer your question?`;
     }
 
 
-    /**
-     * Renders a single chat message bubble.
-     * @param {string} role - 'user' or 'model'.
-     * @param {string} content - The message content (will be Markdown-rendered for 'model').
-     * @param {boolean} isThinking - If true, displays a typing/loading state.
-     * @returns {HTMLElement} - The newly created bubble element.
-     */
     function renderMessage(role, content, isThinking = false) {
         const chatContainer = document.getElementById('chat-container-scrollable');
 
-        // Main Bubble Container
         const bubbleContainer = document.createElement('div');
         bubbleContainer.className = `flex mb-4 max-w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
-        bubbleContainer.style.direction = 'ltr'; // Ensure LTR for English/Code
+        bubbleContainer.style.direction = 'ltr'; 
 
-        // Content Wrapper
         const bubble = document.createElement('div');
         bubble.className = `rounded-xl p-3 max-w-[85%] sm:max-w-[70%] shadow-lg`;
         bubble.style.backgroundColor = role === 'user' ? 'var(--user-bubble)' : 'var(--ai-bubble)';
@@ -600,21 +570,17 @@ How else can I assist you with your project or answer your question?`;
             bubble.classList.add('rounded-tl-sm', 'flex', 'flex-col');
             bubble.style.textAlign = 'left';
 
-            // Content Area
             const contentDiv = document.createElement('div');
             contentDiv.className = `markdown-content pb-2`;
 
             if (isThinking) {
-                // Initial content for thinking state
                 contentDiv.innerHTML = `<i data-lucide="ellipsis" class="w-6 h-6 animate-pulse"></i>`;
             } else {
                 contentDiv.innerHTML = converter.makeHtml(content);
             }
             bubble.appendChild(contentDiv);
 
-            // Footer (Actions)
             const footerDiv = document.createElement('div');
-            // If isThinking is false (static initial message), the footer should be visible by default
             footerDiv.className = `ai-bubble-footer pt-2 flex justify-end text-xs space-x-3 text-gray-400 ${isThinking ? 'hidden' : ''}`;
 
             const actions = [
@@ -625,7 +591,6 @@ How else can I assist you with your project or answer your question?`;
                 { icon: 'thumbs-down', action: () => showToast(CONFIG.MESSAGES.action_dislike) },
             ];
 
-            // Render action buttons
             actions.forEach(item => {
                 const btn = document.createElement('button');
                 btn.className = 'hover:text-white transition-colors p-1';
@@ -640,23 +605,17 @@ How else can I assist you with your project or answer your question?`;
         bubbleContainer.appendChild(bubble);
         chatContainer.appendChild(bubbleContainer);
 
-        // Re-render Lucide icons
         lucide.createIcons();
         scrollChatToBottom();
-        return bubbleContainer; // Return container for streaming/thinking updates
+        return bubbleContainer; 
     }
 
 
-    /** Scrolls the chat container to the bottom. */
     function scrollChatToBottom() {
         const container = document.getElementById('chat-container-scrollable');
         container.scrollTop = container.scrollHeight;
     }
 
-    /**
-     * Displays a temporary toast notification.
-     * @param {string} message - The message to display.
-     */
     function showToast(message) {
         let toast = document.getElementById('chat-toast');
         if (!toast) {
@@ -677,10 +636,6 @@ How else can I assist you with your project or answer your question?`;
         }, 3000);
     }
 
-    /**
-     * Copies text content to the clipboard and shows a toast.
-     * @param {string} text - The text to copy.
-     */
     function copyToClipboard(text) {
         const el = document.createElement('textarea');
         el.value = text;
@@ -693,7 +648,6 @@ How else can I assist you with your project or answer your question?`;
 
     // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Bind Enter key to send message
         document.getElementById('chat-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -701,13 +655,15 @@ How else can I assist you with your project or answer your question?`;
             }
         });
 
-        // FIX: Remove initial 'hidden' class from chat-container if you want the message to appear immediately
         document.getElementById('chat-container-scrollable').classList.remove('hidden');
 
-        // NEW: Render the introductory message on load
-        renderInitialMessage();
+        // Initial check for API Key
+        if (GEMINI_API_KEY === "YOUR_API_KEY_HERE" || !GEMINI_API_KEY) {
+            showToast("⚠️ WARNING: Please add your Gemini API Key to config/config.js!");
+            CONFIG.MESSAGES.INTRO_MESSAGE = `**API Key Missing!** Please update \`config/config.js\` with your real Gemini API key to enable the AI functionality.`;
+        }
 
-        // Initialize Lucide icons
+        renderInitialMessage();
         lucide.createIcons();
     });
 </script>
