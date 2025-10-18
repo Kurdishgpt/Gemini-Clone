@@ -367,7 +367,7 @@
         modelName: "gemini-2.5-flash-preview-09-2025", 
         // Using the preferred model for image generation.
         imageModelName: "imagen-3.0-generate-002",
-        // Using v1beta endpoint structure for consistency with the environment.
+        // Base URLs
         apiBaseUrlText: "https://generativelanguage.googleapis.com/v1beta", 
         apiBaseUrlImage: "https://generativelanguage.googleapis.com/v1beta/models/", 
         maxTokens: 2048,
@@ -701,10 +701,11 @@
 
     /** Calls the Gemini API for TEXT generation. */
     async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
-        // Constructing the URL using the v1beta base and the correct model.
+        // Constructing the API URL
         const apiUrl = `${config.apiBaseUrlText}/models/${config.modelName}:generateContent?key=${config.apiKey}`;
 
         // Build the chat history for context
+        // Ensure role is 'model' or 'user' as expected by the API
         const contents = chatHistory.map(msg => ({
             role: msg.role === 'model' ? 'model' : 'user', 
             parts: [{ text: msg.content }]
@@ -719,6 +720,7 @@
             systemInstruction: {
                 parts: [{ text: systemInstruction }]
             },
+            // Add search tool only if grounding is enabled in config
             ...(config.enableSearchGrounding && { tools: [{ "google_search": {} }] })
         };
         
@@ -745,6 +747,7 @@
                     // Check for 4xx or 5xx errors
                     const errorDetails = await response.text();
                     console.error(`Gemini Text API HTTP error! Status: ${response.status}`, errorDetails);
+                    // Throw error to trigger retry or final failure handler
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -808,7 +811,7 @@
 
     /** Calls the Imagen API for IMAGE generation. */
     async function generateImage(userPrompt, thinkingBubble) {
-        // Use properties of the config object directly for a cleaner call
+        // Constructing the API URL for Imagen
         const apiUrl = `${config.apiBaseUrlImage}${config.imageModelName}:predict?key=${config.apiKey}`;
         
         // Extract the actual image prompt part
