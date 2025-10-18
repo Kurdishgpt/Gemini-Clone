@@ -699,13 +699,13 @@
 
     // --- API HANDLERS ---
 
-    /** Calls the Gemini API for TEXT generation. */
+    /** Calls the Gemini API for TEXT generation with exponential backoff. */
     async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
-        // Constructing the API URL
-        const apiUrl = `${config.apiBaseUrlText}/models/${config.modelName}:generateContent?key=${config.apiKey}`;
+        // The key is an empty string as required; the environment provides it.
+        const apiKey = config.apiKey; 
+        const apiUrl = `${config.apiBaseUrlText}/models/${config.modelName}:generateContent?key=${apiKey}`;
 
         // Build the chat history for context
-        // Ensure role is 'model' or 'user' as expected by the API
         const contents = chatHistory.map(msg => ({
             role: msg.role === 'model' ? 'model' : 'user', 
             parts: [{ text: msg.content }]
@@ -720,7 +720,6 @@
             systemInstruction: {
                 parts: [{ text: systemInstruction }]
             },
-            // Add search tool only if grounding is enabled in config
             ...(config.enableSearchGrounding && { tools: [{ "google_search": {} }] })
         };
         
@@ -731,9 +730,10 @@
 
         while (attempt < maxRetries && !success) {
             try {
-                // Implementing exponential backoff logic for retries
                 if (attempt > 0) {
+                    // Exponential backoff: 1s, 2s, 4s
                     const delay = Math.pow(2, attempt) * 1000;
+                    // console.log(`[Attempt ${attempt + 1}] Retrying API call in ${delay / 1000}s...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
 
@@ -744,10 +744,9 @@
                 });
                 
                 if (!response.ok) {
-                    // Check for 4xx or 5xx errors
                     const errorDetails = await response.text();
-                    console.error(`Gemini Text API HTTP error! Status: ${response.status}`, errorDetails);
-                    // Throw error to trigger retry or final failure handler
+                    console.error(`[Attempt ${attempt + 1}] Gemini Text API HTTP error! Status: ${response.status}`, errorDetails);
+                    // Throw error to trigger retry
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -755,7 +754,7 @@
                 success = true;
 
             } catch (error) {
-                console.error(`Gemini Text API Attempt ${attempt + 1} failed:`, error);
+                // Log and continue to next attempt if retries remain
                 attempt++;
             }
         }
@@ -764,6 +763,7 @@
             // Handle failure after all retries
             const contentDiv = thinkingBubble.querySelector('.markdown-content');
             contentDiv.innerHTML = `<p class="text-red-400">${CONFIG.MESSAGES.error_api_call_failed}</p>`;
+            console.error("Critical: Failed all attempts to call Gemini API.");
             enableInput();
             return;
         }
@@ -811,8 +811,9 @@
 
     /** Calls the Imagen API for IMAGE generation. */
     async function generateImage(userPrompt, thinkingBubble) {
-        // Constructing the API URL for Imagen
-        const apiUrl = `${config.apiBaseUrlImage}${config.imageModelName}:predict?key=${config.apiKey}`;
+        // The key is an empty string as required; the environment provides it.
+        const apiKey = config.apiKey; 
+        const apiUrl = `${config.apiBaseUrlImage}${config.imageModelName}:predict?key=${apiKey}`;
         
         // Extract the actual image prompt part
         const imagePrompt = userPrompt.substring(CONFIG.PROMPTS.image.length).trim();
@@ -836,8 +837,8 @@
 
         while (attempt < maxRetries && !success) {
             try {
-                // Implementing exponential backoff logic for retries
                 if (attempt > 0) {
+                    // Exponential backoff: 1s, 2s, 4s
                     const delay = Math.pow(2, attempt) * 1000;
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
@@ -850,7 +851,7 @@
                 
                 if (!response.ok) {
                     const errorDetails = await response.text();
-                    console.error(`Imagen API HTTP error! Status: ${response.status}`, errorDetails);
+                    console.error(`[Attempt ${attempt + 1}] Imagen API HTTP error! Status: ${response.status}`, errorDetails);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
@@ -858,7 +859,7 @@
                 success = true;
 
             } catch (error) {
-                console.error(`Imagen API Attempt ${attempt + 1} failed:`, error);
+                // Log and continue to next attempt if retries remain
                 attempt++;
             }
         }
@@ -919,7 +920,7 @@
     /** Closes the Add Tools modal. */
     function closeAddToolsModal() { document.getElementById('add-tools-modal').classList.add('hidden'); }
 
-    /** Handles an action from the tools modal (e.g., Camera, Create Image). */
+    /** Handles an action from the tools modal (e.g., Camera, Photos, Files). */
     function handleToolAction(tool, prompt = '') {
         closeAddToolsModal();
         if (prompt) {
