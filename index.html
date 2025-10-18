@@ -6,8 +6,10 @@
     <title>KurdishGPT Mobile Chat (Gemini Powered)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons for better aesthetic and more icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Showdown for Markdown rendering -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
 
     <style>
@@ -87,11 +89,13 @@
 </head>
 <body class="flex flex-col h-screen antialiased">
 
+    <!-- SIDEBAR BACKDROP & MENU -->
     <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-75 z-40 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
 
 
     <aside id="sidebar-menu" class="fixed top-0 left-0 h-full w-64 bg-black z-50 transform -translate-x-full transition-transform duration-300 shadow-2xl flex flex-col justify-between p-4 border-r border-gray-900">
 
+        <!-- TOP SECTION: Search & Main Links -->
         <div>
 
             <div class="flex items-center justify-between p-2 mb-4">
@@ -122,6 +126,7 @@
 
             </div>
 
+            <!-- RECENT CHATS -->
             <div class="mt-6">
                 <h3 class="text-xs font-semibold uppercase text-gray-500 mb-2 px-3">Recent Chats</h3>
                 <div class="space-y-1">
@@ -132,6 +137,7 @@
         </div>
 
 
+        <!-- BOTTOM SECTION: User Profile/Settings -->
         <div class="border-t border-gray-800 pt-4">
 
             <a href="#" onclick="showFeatureNotAvailable('User Profile')" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors">
@@ -143,12 +149,15 @@
     </aside>
 
 
+    <!-- HEADER -->
     <header class="flex justify-between items-center p-4 h-16 sticky top-0 bg-black z-20 border-b border-gray-900">
 
+        <!-- Left: Sidebar Toggle / Back Button (on desktop) -->
         <button onclick="toggleSidebar()" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Open menu">
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
 
+        <!-- Center: Get Plus Button -->
         <div class="flex-grow flex justify-center">
             <button onclick="showFeatureNotAvailable('Get Plus')" class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
                 <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
@@ -156,17 +165,20 @@
             </button>
         </div>
 
+        <!-- Right: New Chat Button -->
         <button onclick="clearChat()" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors" aria-label="Start new chat">
             <i data-lucide="rotate-cw" class="w-6 h-6"></i>
         </button>
     </header>
 
 
+    <!-- MAIN CHAT/HOME CONTENT -->
     <main id="main-content" class="flex-grow flex flex-col items-center justify-start p-4 overflow-y-auto" role="log">
 
-        <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4 hidden">
+        <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4">
             <h1 class="text-3xl font-semibold mb-10 mt-16 text-center">What can I help with?</h1>
 
+            <!-- Prompt Suggestions with ChatGPT-like style -->
             <div id="suggestion-buttons" class="flex flex-wrap justify-center gap-3 w-full px-4 sm:px-0">
 
                 <button onclick="setPrompt(CONFIG.PROMPTS.image.trim())" class="prompt-button">
@@ -189,11 +201,13 @@
         </div>
 
 
-        <div id="chat-container-scrollable" class="w-full h-full max-w-2xl mx-auto overflow-y-auto pt-4 pb-20">
-            </div>
+        <div id="chat-container-scrollable" class="hidden w-full h-full max-w-2xl mx-auto overflow-y-auto pt-4 pb-20">
+
+        </div>
 
     </main>
 
+    <!-- ADD TOOLS MODAL OVERLAY -->
     <div id="add-tools-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-90 flex flex-col pt-16">
         <div class="absolute top-0 left-0 w-full p-4 flex justify-start">
             <button onclick="closeAddToolsModal()" class="text-white p-2" aria-label="Close tools menu">
@@ -201,16 +215,20 @@
             </button>
         </div>
 
+        <!-- Top Grid of Primary Actions (Camera, Photos, Files) -->
         <div class="w-full px-8 mb-8 mt-4">
             <div class="grid grid-cols-3 gap-4 max-w-sm mx-auto">
+                <!-- Camera -->
                 <button onclick="handleToolAction('Camera')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="camera" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Camera</p>
                 </button>
+                <!-- Photos -->
                 <button onclick="handleToolAction('Photos')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="image" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Photos</p>
                 </button>
+                <!-- Files -->
                 <button onclick="handleToolAction('Files')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="folder" class="w-8 h-8 mb-2 text-white"></i>
                     <p>Files</p>
@@ -218,7 +236,9 @@
             </div>
         </div>
 
+        <!-- Tools List -->
         <div class="flex-grow overflow-y-auto px-6 space-y-2">
+            <!-- Create Image -->
             <button onclick="handleToolAction('Create image', CONFIG.PROMPTS.image)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="image" class="w-6 h-6 mr-4 text-green-400"></i>
                 <div>
@@ -227,6 +247,7 @@
                 </div>
             </button>
 
+            <!-- Thinking -->
             <button onclick="handleToolAction('Thinking', CONFIG.PROMPTS.thinking)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="lightbulb" class="w-6 h-6 mr-4 text-yellow-400"></i>
                 <div>
@@ -235,6 +256,7 @@
                 </div>
             </button>
 
+            <!-- Deep research -->
             <button onclick="handleToolAction('Deep research', CONFIG.PROMPTS.research)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="flask-round" class="w-6 h-6 mr-4 text-red-400"></i>
                 <div>
@@ -243,6 +265,7 @@
                 </div>
             </button>
 
+            <!-- Web search -->
             <button onclick="handleToolAction('Web search', CONFIG.PROMPTS.search)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="globe" class="w-6 h-6 mr-4 text-blue-400"></i>
                 <div>
@@ -251,6 +274,7 @@
                 </div>
             </button>
 
+            <!-- Study and learn -->
             <button onclick="handleToolAction('Study and learn', CONFIG.PROMPTS.study)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="book-open-text" class="w-6 h-6 mr-4 text-purple-400"></i>
                 <div>
@@ -260,6 +284,7 @@
             </button>
         </div>
 
+        <!-- Explore Tools Button -->
         <div class="p-6">
             <button onclick="handleToolAction('Explore tools')" class="w-full py-3 rounded-full font-bold text-center transition-colors" style="background-color: var(--ai-bubble); color: var(--text-light);">
                 Explore tools
@@ -268,15 +293,18 @@
     </div>
 
 
+    <!-- INPUT BAR / FOOTER (ChatGPT Style) -->
     <footer id="input-container" class="fixed bottom-0 w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
         <div class="w-full flex items-end p-2 rounded-2xl border" style="background-color: var(--input-dark); border-color: var(--input-border);">
 
+            <!-- Left: Attachment/Tools Button (Always visible) -->
             <button id="attachment-button" onclick="openAddToolsModal()"
                     class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors"
                     aria-label="Add attachment or open tools">
                 <i data-lucide="plus" class="w-6 h-6"></i>
             </button>
 
+            <!-- Center: Input Wrapper -->
             <div class="flex flex-grow items-center mx-1">
                 <input id="chat-input"
                        type="text"
@@ -285,15 +313,20 @@
                        class="w-full bg-transparent text-white focus:outline-none py-2 text-base">
             </div>
 
+            <!-- Right: Send or Mic/Wave Button -->
+
+            <!-- Send Button (Hidden by default) -->
             <button id="send-button" onclick="handleSendMessage()"
                     class="flex-shrink-0 p-2 text-blue-400 hover:text-blue-300 transition-colors hidden"
                     aria-label="Send message">
                 <i data-lucide="send" class="w-6 h-6"></i>
             </button>
 
+            <!-- Mic/Wave Button (Visible when input is empty) -->
             <button id="mic-button" onclick="showFeatureNotAvailable('Voice Input')"
                     class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors"
                     aria-label="Voice input">
+                <!-- Using a wave icon to represent the voice prompt indicator -->
                 <i data-lucide="volume-2" class="w-6 h-6"></i>
             </button>
 
@@ -301,16 +334,18 @@
     </footer>
 
 
-<script type="module">
-    // FIX: Import the API key from the external config file
-    import { GEMINI_API_KEY } from "./config/config.js";
-
+<script>
     // --- GLOBAL STATE AND CONFIG ---
     let chatHistory = [];
     let isTyping = false;
-    const GEMINI_MODEL = "gemini-2.5-flash";
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}&alt=sse`;
 
+    // Global Constants for API
+    const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
+    const apiKey = ""; // API key is provided by the canvas environment
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const MAX_RETRIES = 5;
+    const INITIAL_BACKOFF_MS = 1000;
+    
     // Configuration for static text and prompts
     const CONFIG = {
         PROMPTS: {
@@ -324,15 +359,6 @@
             study: 'Explain the concept of neural networks in simple terms.',
         },
         MESSAGES: {
-            INTRO_MESSAGE: `Welcome to KurdishGPT, powered by **Google Gemini**!
-
-I am now integrated with the real Gemini API to provide fast, relevant responses.
-
-**To test the real AI:**
-1.  Make sure you've added your API key to \`config/config.js\`.
-2.  Ask me about the history of Kurdistan, or ask for a short story.
-
-*What can I help you with today?*`,
             action_copy_success: 'Content copied to clipboard!',
             action_copied: 'Copied.',
             action_tts: 'Text-to-Speech is playing the response now.',
@@ -340,7 +366,7 @@ I am now integrated with the real Gemini API to provide fast, relevant responses
             action_like: 'Thanks for the feedback!',
             action_dislike: 'Thanks for the feedback. We will improve.',
             action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
-            error_api_call_failed: 'Failed to get a response from the API. Check your network or API key.',
+            error_api_call_failed: 'Failed to get a response from the AI.',
         }
     };
 
@@ -355,11 +381,18 @@ I am now integrated with the real Gemini API to provide fast, relevant responses
 
     // --- CHAT INTERFACE FUNCTIONS ---
 
+    /**
+     * Displays a feature not available message using the toast notification.
+     * @param {string} featureName - The name of the feature (e.g., 'Library').
+     */
     function showFeatureNotAvailable(featureName) {
         const message = CONFIG.MESSAGES.action_feature_not_available(featureName);
         showToast(message);
     }
 
+    /**
+     * Toggles the sidebar visibility.
+     */
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar-menu');
         const backdrop = document.getElementById('sidebar-backdrop');
@@ -378,38 +411,63 @@ I am now integrated with the real Gemini API to provide fast, relevant responses
         }
     }
 
+    /**
+     * Clears the chat history and resets the view to the home screen.
+     */
     function clearChat() {
         chatHistory = [];
         const chatContainer = document.getElementById('chat-container-scrollable');
+        const homeScreen = document.getElementById('home-screen');
         chatContainer.innerHTML = '';
+        chatContainer.classList.add('hidden');
+        homeScreen.classList.remove('hidden');
         document.getElementById('chat-input').value = '';
         checkInputStatus();
-        renderInitialMessage(); 
     }
 
+    /**
+     * Sets the text input value and focuses it. Used by suggestion buttons.
+     * @param {string} prompt - The text to put into the input field.
+     */
     function setPrompt(prompt) {
         document.getElementById('chat-input').value = prompt;
         document.getElementById('chat-input').focus();
         checkInputStatus();
     }
 
+    /**
+     * Opens the Add Tools modal.
+     */
     function openAddToolsModal() {
-        document.getElementById('add-tools-modal').classList.remove('hidden');
+        const modal = document.getElementById('add-tools-modal');
+        modal.classList.remove('hidden');
     }
 
+    /**
+     * Closes the Add Tools modal.
+     */
     function closeAddToolsModal() {
         document.getElementById('add-tools-modal').classList.add('hidden');
     }
 
+    /**
+     * Handles an action from the tools modal (e.g., Camera, Create Image).
+     * @param {string} tool - The name of the tool.
+     * @param {string} [prompt=''] - Optional prompt to set in the chat input.
+     */
     function handleToolAction(tool, prompt = '') {
         closeAddToolsModal();
         if (prompt) {
             setPrompt(prompt);
         } else {
+            // For features like Camera/Photos/Files/Explore Tools, show toast
             showFeatureNotAvailable(tool);
         }
     }
 
+    /**
+     * Switches the input bar buttons between Mic/Wave and Send based on input text.
+     */
     function checkInputStatus() {
         const input = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
@@ -433,131 +491,155 @@ I am now integrated with the real Gemini API to provide fast, relevant responses
 
         if (userPrompt === '' || isTyping) return;
 
+        // 1. Hide home screen and show chat container
         document.getElementById('home-screen').classList.add('hidden');
         document.getElementById('chat-container-scrollable').classList.remove('hidden');
 
-        // Prepare content for API (role conversion)
-        const chatContents = chatHistory.map(msg => ({
-            role: msg.role === 'model' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
-        }));
-        chatContents.push({ role: 'user', parts: [{ text: userPrompt }] });
-
-        // 1. Add user message to history and render
+        // 2. Add user message to history and render
         chatHistory.push({ role: 'user', content: userPrompt });
         renderMessage('user', userPrompt);
 
-        // 2. Clear input and disable
+        // 3. Clear input and disable
         inputElement.value = '';
         checkInputStatus();
         inputElement.setAttribute('disabled', 'true');
         isTyping = true;
 
-        // 3. Render AI thinking/typing bubble
+        // 4. Render AI thinking/typing bubble
         const thinkingBubble = renderMessage('model', '', true);
 
-        // 4. Call real Gemini API
-        streamGeminiResponse(chatContents, thinkingBubble);
+        // 5. Call the real Gemini API
+        callGeminiAPI(userPrompt, thinkingBubble);
     }
 
     /**
-     * NEW: Streams the response from the real Gemini API.
-     * @param {Array} contents - The full chat history to send.
+     * Calls the Gemini API with exponential backoff for text generation.
+     * @param {string} prompt - The user's prompt.
      * @param {HTMLElement} thinkingBubble - The bubble element to stream into.
      */
-    async function streamGeminiResponse(contents, thinkingBubble) {
-        const contentDiv = thinkingBubble.querySelector('.markdown-content');
-        const footerDiv = thinkingBubble.querySelector('.ai-bubble-footer');
-        let fullResponse = '';
-
-        // Finalize state before stream
-        contentDiv.innerHTML = `<span class="typing-cursor"></span>`;
-        scrollChatToBottom();
+    async function callGeminiAPI(prompt, thinkingBubble) {
         
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents, config: { stream: true } })
-            });
+        // System instruction to guide the model's persona
+        const systemPrompt = "You are KurdishGPT, a friendly, knowledgeable, and helpful AI assistant. You can use Google Search to access up-to-date information.";
+        
+        const payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+            // Enable Google Search grounding
+            tools: [{ "google_search": {} }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+        };
 
-            if (!response.ok || !response.body) {
-                throw new Error(`API returned status ${response.status}`);
-            }
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
+                if (!response.ok) {
+                    throw new Error(`API returned status ${response.status}`);
+                }
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
 
-                // Decode chunk and process SSE events
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
-                
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const data = JSON.parse(line.substring(6));
-                            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                            
-                            if (text) {
-                                fullResponse += text;
-                                // Update DOM frequently for smooth streaming
-                                const htmlContent = converter.makeHtml(fullResponse);
-                                contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
-                                scrollChatToBottom();
-                            }
-                        } catch (e) {
-                            // Ignore empty or malformed data lines
-                        }
-                    }
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const text = candidate.content.parts[0].text;
+                    
+                    // 1. Stream the real response text (simulate typing effect)
+                    await streamResponse(text, thinkingBubble);
+
+                    // 2. Re-enable input and reset state
+                    document.getElementById('chat-input').removeAttribute('disabled');
+                    isTyping = false;
+                    document.getElementById('chat-input').focus();
+                    return; // Success, exit the loop
+                } else {
+                    throw new Error('API response lacked content.');
+                }
+
+            } catch (error) {
+                if (attempt === MAX_RETRIES - 1) {
+                    // Final attempt failed, handle user-facing error
+                    console.error('Final API call attempt failed:', error);
+                    thinkingBubble.remove(); // Remove the thinking bubble
+                    showToast(CONFIG.MESSAGES.error_api_call_failed);
+                    
+                    // Re-enable input on ultimate failure
+                    document.getElementById('chat-input').removeAttribute('disabled');
+                    isTyping = false;
+                    document.getElementById('chat-input').focus();
+                } else {
+                    const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+                    // Use console.log for silent backoff logging
+                    console.log(`API call failed, retrying in ${delay}ms...`); 
+                    await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
-
-        } catch (error) {
-            console.error("Gemini API Error:", error);
-            fullResponse = `**Error:** ${CONFIG.MESSAGES.error_api_call_failed}\n\n*Details: ${error.message}*`;
-        } finally {
-            // Cleanup and finalize UI
-            const inputElement = document.getElementById('chat-input');
-            inputElement.removeAttribute('disabled');
-            isTyping = false;
-            inputElement.focus();
-            
-            // Final rendering of the full response
-            contentDiv.innerHTML = converter.makeHtml(fullResponse);
-            const cursor = thinkingBubble.querySelector('.typing-cursor');
-            if (cursor) cursor.remove();
-            footerDiv.classList.remove('hidden');
-
-            // Add final response to chat history
-            chatHistory.push({ role: 'model', content: fullResponse });
-            scrollChatToBottom();
         }
     }
 
 
-    function renderInitialMessage() {
-        const content = CONFIG.MESSAGES.INTRO_MESSAGE;
-        const bubbleContainer = renderMessage('model', content, false);
-        const footerDiv = bubbleContainer.querySelector('.ai-bubble-footer');
-        if (footerDiv) {
-            footerDiv.classList.remove('hidden');
+    /**
+     * Simulates the streaming effect of a response.
+     * @param {string} content - The full response text.
+     * @param {HTMLElement} bubble - The target bubble element.
+     */
+    async function streamResponse(content, bubble) {
+        const contentDiv = bubble.querySelector('.markdown-content');
+        const footerDiv = bubble.querySelector('.ai-bubble-footer');
+
+        const totalChunks = content.length;
+        let streamedText = '';
+
+        // Remove the loading ellipsis and start with the cursor
+        contentDiv.innerHTML = `<span class="typing-cursor"></span>`;
+
+        // Simulate chunk delivery
+        for (let i = 0; i < totalChunks; i++) {
+            streamedText += content[i];
+
+            // Only update DOM every N characters or if it's the last character
+            if (i % 10 === 0 || i === totalChunks - 1) {
+                const htmlContent = converter.makeHtml(streamedText);
+                contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
+                scrollChatToBottom();
+            }
+            await new Promise(resolve => setTimeout(resolve, 5)); // Fast typing
         }
+
+        // Finalize the content
+        contentDiv.innerHTML = converter.makeHtml(content);
+        // Safely remove the cursor
+        const cursor = bubble.querySelector('.typing-cursor');
+        if (cursor) cursor.remove();
+        
+        footerDiv.classList.remove('hidden');
+
+        // Add to chat history
         chatHistory.push({ role: 'model', content: content });
+
         scrollChatToBottom();
     }
 
 
+    /**
+     * Renders a single chat message bubble.
+     * @param {string} role - 'user' or 'model'.
+     * @param {string} content - The message content (will be Markdown-rendered for 'model').
+     * @param {boolean} isThinking - If true, displays a typing/loading state.
+     * @returns {HTMLElement} - The newly created bubble element.
+     */
     function renderMessage(role, content, isThinking = false) {
         const chatContainer = document.getElementById('chat-container-scrollable');
 
+        // Main Bubble Container
         const bubbleContainer = document.createElement('div');
         bubbleContainer.className = `flex mb-4 max-w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
-        bubbleContainer.style.direction = 'ltr'; 
+        bubbleContainer.style.direction = 'ltr'; // Ensure LTR for English/Code
 
+        // Content Wrapper
         const bubble = document.createElement('div');
         bubble.className = `rounded-xl p-3 max-w-[85%] sm:max-w-[70%] shadow-lg`;
         bubble.style.backgroundColor = role === 'user' ? 'var(--user-bubble)' : 'var(--ai-bubble)';
@@ -570,27 +652,31 @@ I am now integrated with the real Gemini API to provide fast, relevant responses
             bubble.classList.add('rounded-tl-sm', 'flex', 'flex-col');
             bubble.style.textAlign = 'left';
 
+            // Content Area
             const contentDiv = document.createElement('div');
             contentDiv.className = `markdown-content pb-2`;
 
             if (isThinking) {
+                // Initial content for thinking state
                 contentDiv.innerHTML = `<i data-lucide="ellipsis" class="w-6 h-6 animate-pulse"></i>`;
             } else {
                 contentDiv.innerHTML = converter.makeHtml(content);
             }
             bubble.appendChild(contentDiv);
 
+            // Footer (Actions)
             const footerDiv = document.createElement('div');
             footerDiv.className = `ai-bubble-footer pt-2 flex justify-end text-xs space-x-3 text-gray-400 ${isThinking ? 'hidden' : ''}`;
 
             const actions = [
                 { icon: 'copy', action: () => copyToClipboard(content) },
-                { icon: 'volume-2', action: () => showFeatureNotAvailable('Text-to-Speech') },
-                { icon: 'rotate-cw', action: () => showFeatureNotAvailable('Regenerate') },
+                { icon: 'volume-2', action: () => showFeatureNotAvailable(CONFIG.MESSAGES.action_tts) },
+                { icon: 'rotate-cw', action: () => showFeatureNotAvailable(CONFIG.MESSAGES.action_regenerate) },
                 { icon: 'thumbs-up', action: () => showToast(CONFIG.MESSAGES.action_like) },
                 { icon: 'thumbs-down', action: () => showToast(CONFIG.MESSAGES.action_dislike) },
             ];
 
+            // Render action buttons
             actions.forEach(item => {
                 const btn = document.createElement('button');
                 btn.className = 'hover:text-white transition-colors p-1';
@@ -605,17 +691,28 @@ I am now integrated with the real Gemini API to provide fast, relevant responses
         bubbleContainer.appendChild(bubble);
         chatContainer.appendChild(bubbleContainer);
 
+        // Re-render Lucide icons
         lucide.createIcons();
         scrollChatToBottom();
-        return bubbleContainer; 
+        return bubbleContainer; // Return container for streaming/thinking updates
     }
 
 
+    /** Scrolls the chat container to the bottom. */
     function scrollChatToBottom() {
         const container = document.getElementById('chat-container-scrollable');
-        container.scrollTop = container.scrollHeight;
+        // Check if container exists and is not undefined or null
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        } else {
+             console.error("Chat container not found!");
+        }
     }
 
+    /**
+     * Displays a temporary toast notification.
+     * @param {string} message - The message to display.
+     */
     function showToast(message) {
         let toast = document.getElementById('chat-toast');
         if (!toast) {
@@ -636,18 +733,24 @@ I am now integrated with the real Gemini API to provide fast, relevant responses
         }, 3000);
     }
 
+    /**
+     * Copies text content to the clipboard and shows a toast.
+     * @param {string} text - The text to copy.
+     */
     function copyToClipboard(text) {
         const el = document.createElement('textarea');
         el.value = text;
         document.body.appendChild(el);
         el.select();
-        document.execCommand('copy');
+        // Fallback for secure copy since navigator.clipboard might fail in iframes
+        document.execCommand('copy'); 
         document.body.removeChild(el);
         showToast(CONFIG.MESSAGES.action_copy_success);
     }
 
     // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
+        // Bind Enter key to send message
         document.getElementById('chat-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -655,17 +758,10 @@ I am now integrated with the real Gemini API to provide fast, relevant responses
             }
         });
 
-        document.getElementById('chat-container-scrollable').classList.remove('hidden');
-
-        // Initial check for API Key
-        if (GEMINI_API_KEY === "YOUR_API_KEY_HERE" || !GEMINI_API_KEY) {
-            showToast("⚠️ WARNING: Please add your Gemini API Key to config/config.js!");
-            CONFIG.MESSAGES.INTRO_MESSAGE = `**API Key Missing!** Please update \`config/config.js\` with your real Gemini API key to enable the AI functionality.`;
-        }
-
-        renderInitialMessage();
+        // Initialize Lucide icons
         lucide.createIcons();
     });
 </script>
 </body>
 </html>
+
