@@ -7,5 +7,5 @@ MAX_TOKENS: 2048,
 TEMPERATURE: 0.7,
 };
 
-export default config; API_KEY="sk_claude_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+export default config; 
 
