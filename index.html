@@ -569,31 +569,41 @@
     }
 
     /**
-     * Simulates the async API call to Gemini.
+     * Calls the real AI API endpoint.
      * @param {string} prompt - The user's prompt.
      * @param {HTMLElement} thinkingBubble - The bubble element to stream into.
      */
     async function simulateApiCall(prompt, thinkingBubble) {
-        // Prepare a dummy response based on the prompt
-        let responseContent = `You asked about: **${prompt}**.
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: prompt })
+            });
 
-This is a functional clone of the **ChatGPT mobile interface**. It uses:
-* **Tailwind CSS** for a responsive, dark-mode design.
-* **Showdown.js** to render content using Markdown, supporting lists, bold text, and code blocks.
-* A JavaScript simulation to demonstrate **response streaming** (typing effect).
+            if (!response.ok) {
+                throw new Error('API request failed');
+            }
 
-Feel free to try any of the prompt suggestions or type your own question!
+            const data = await response.json();
+            const responseContent = data.reply || 'No response from AI';
 
-*What would you like to ask or change in the UI next?*`;
+            // Start streaming simulation
+            await streamResponse(responseContent, thinkingBubble);
 
-        // Start streaming simulation
-        await streamResponse(responseContent, thinkingBubble);
-
-        // Re-enable input
-        const inputElement = document.getElementById('chat-input');
-        inputElement.removeAttribute('disabled');
-        isTyping = false;
-        inputElement.focus();
+        } catch (error) {
+            console.error('API Error:', error);
+            const errorMessage = 'Sorry, I encountered an error. Please try again.';
+            await streamResponse(errorMessage, thinkingBubble);
+        } finally {
+            // Re-enable input
+            const inputElement = document.getElementById('chat-input');
+            inputElement.removeAttribute('disabled');
+            isTyping = false;
+            inputElement.focus();
+        }
     }
 
 
