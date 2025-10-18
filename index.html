@@ -161,11 +161,11 @@
             <i data-lucide="menu" class="w-6 h-6"></i>
         </button>
 
-        <!-- Center: Get Plus Button -->
+        <!-- Center: Translation Button -->
         <div class="flex-grow flex justify-center">
-            <button onclick="showFeatureNotAvailable('Get Plus')" class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
-                <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
-                Get Plus
+            <button id="translate-button" onclick="toggleLanguage()" class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white" style="background-color: var(--purple-prime);">
+                <i data-lucide="languages" class="w-4 h-4 mr-2"></i>
+                <span id="language-label">English</span>
             </button>
         </div>
 

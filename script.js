@@ -3,6 +3,7 @@ import config from "./config.js";
 // --- GLOBAL STATE ---
 let chatHistory = [];
 let isTyping = false;
+let currentLanguage = 'en'; // 'en' for English, 'ckb' for Kurdish Central, 'ar' for Arabic
 
 // --- CONFIG ---
 const CONFIG = {
@@ -29,6 +30,13 @@ const CONFIG = {
     action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
     error_api_call_failed: 'Failed to get a response from the API.',
   }
+};
+
+// Language configurations
+const LANGUAGES = {
+  en: { name: 'English', code: 'en', instruction: '' },
+  ckb: { name: 'کوردیی ناوەندی', code: 'ckb', instruction: 'Please respond in Kurdish (Central Kurdish/Sorani):' },
+  ar: { name: 'العربية', code: 'ar', instruction: 'Please respond in Arabic:' }
 };
 
 // Make CONFIG globally accessible
@@ -157,13 +165,17 @@ function renderMessage(role, content, isThinking = false) {
 // --- GEMINI API CALL ---
 async function callGeminiAPI(prompt) {
   try {
+    // Add language instruction to prompt if not English
+    const languageInstruction = LANGUAGES[currentLanguage].instruction;
+    const fullPrompt = languageInstruction ? `${languageInstruction}\n\n${prompt}` : prompt;
+    
     const response = await fetch(
       `${CONFIG.API_BASE_URL}/models/${CONFIG.MODEL_NAME}:generateContent?key=${CONFIG.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
         }),
       }
     );
@@ -271,6 +283,20 @@ function handleToolAction(tool, prompt = '') {
   }
 }
 
+function toggleLanguage() {
+  const languageOrder = ['en', 'ckb', 'ar'];
+  const currentIndex = languageOrder.indexOf(currentLanguage);
+  const nextIndex = (currentIndex + 1) % languageOrder.length;
+  currentLanguage = languageOrder[nextIndex];
+  
+  const languageLabel = document.getElementById('language-label');
+  if (languageLabel) {
+    languageLabel.textContent = LANGUAGES[currentLanguage].name;
+  }
+  
+  showToast(`Language changed to ${LANGUAGES[currentLanguage].name}`);
+}
+
 // Make functions globally accessible
 window.clearChat = clearChat;
 window.showFeatureNotAvailable = showFeatureNotAvailable;
@@ -281,6 +307,7 @@ window.closeAddToolsModal = closeAddToolsModal;
 window.handleToolAction = handleToolAction;
 window.handleSendMessage = handleSendMessage;
 window.checkInputStatus = checkInputStatus;
+window.toggleLanguage = toggleLanguage;
 
 // --- INIT ---
 document.addEventListener("DOMContentLoaded", () => {
