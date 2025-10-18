@@ -1,5 +1,8 @@
 // --- script.js ---
 
+// 1. IMPORT CONFIGURATION
+import { GEMINI_CONFIG, CONFIG, L10N } from './config.js';
+
 // Markdown Converter Setup (Global scope for all functions)
 const converter = new showdown.Converter({
     tables: true,
@@ -8,151 +11,13 @@ const converter = new showdown.Converter({
     simpleLineBreaks: true
 });
 
-// --- GLOBAL STATE AND CONFIG ---
+// --- GLOBAL STATE ---
 let chatHistory = [];
 let isTyping = false;
 let currentLanguage = 'en'; // Initial state: 'en' (English)
 
-// Configuration for Gemini API and Model Parameters
-const GEMINI_CONFIG = {
-    // !!! IMPORTANT: The API Key has been inserted here !!!
-    // NOTE: This key is mocked. If using a real API, replace this value.
-    API_KEY: "AIzaSyCw7nVjXZ9sWu9M8zdwjb5jFVJsV5AXEbg", 
-    MODEL_NAME: "gemini-2.0-flash", 
-    IMAGE_MODEL_NAME: "imagen-3.0-generate-002",
-    API_BASE_URL_TEXT: "https://generativelanguage.googleapis.com/v1", 
-    API_BASE_URL_IMAGE: "https://generativelanguage.googleapis.com/v1beta/models/", 
-    MAX_TOKENS: 2048,
-    TEMPERATURE: 0.7, 
-    ENABLE_SEARCH_GROUNDING: true,
-};
 
-// Configuration for static text and prompts
-const CONFIG = {
-    PROMPTS: {
-        image: 'Generate a high-quality image of ',
-        summarize: 'Summarize the plot of ',
-        brainstorm: 'Brainstorm 5 ideas for a startup in Erbil.',
-        more: 'What are some fun facts about the Kurdistan Region of Iraq?',
-        thinking: 'Analyze the historical significance of the Medes.',
-        research: 'Write a deep report on the future of Kurdish language technology.',
-        search: 'What is the current price of oil?',
-        study: 'Explain the concept of neural networks in simple terms.',
-    },
-    MESSAGES: {
-        action_copy_success: 'Content copied to clipboard!',
-        action_copied: 'Copied.',
-        action_tts: 'Text-to-Speech is playing the response now.',
-        action_regenerate: 'Regenerating response...',
-        action_like: 'Thanks for the feedback!',
-        action_dislike: 'Thanks for the feedback. We will improve.',
-        action_feature_not_available: (feature) => `${feature} feature is not yet available in this clone.`,
-        error_api_call_failed: 'Failed to get a response from the API. Please check the console for details.',
-        error_api_blocked: 'The response was blocked due to safety settings.',
-        error_image_failed: 'Failed to generate image. The prompt might be too complex or blocked by safety filters.',
-        image_success: 'Here is the image I generated for you:',
-    },
-    // LOCAL STORAGE KEYS
-    STORAGE_KEY: {
-        RECENT_CHATS: 'kurdish_gpt_recent_chats',
-        MAX_CHATS: 5,
-    }
-};
-
-// Localization Map (L10N) for UI elements (English and Kurdish/Sorani)
-const L10N = {
-    'en': {
-        // General UI
-        'new_chat': 'New chat',
-        'library': 'Library',
-        'gpts': 'GPTs',
-        'search': 'Search',
-        'recent_chats_title': 'Recent Chats',
-        'no_recent_chats': 'No recent chats',
-        'home_title': 'What can I help with?',
-        'input_placeholder': 'Ask KurdishGPT',
-        'input_attachment_aria': 'Add attachment or open tools',
-        'input_send_aria': 'Send message',
-        'input_voice_aria': 'Voice input',
-        'explore_tools': 'Explore tools',
-        
-        // Prompt Suggestions
-        'prompt_image': 'Create image',
-        'prompt_summarize': 'Summarize text',
-        'prompt_brainstorm': 'Brainstorm',
-        'prompt_more': 'More',
-
-        // Tools Modal
-        'tool_camera': 'Camera',
-        'tool_photos': 'Photos',
-        'tool_files': 'Files',
-        'tool_image_title': 'Create image',
-        'tool_image_desc': 'Visualize anything',
-        'tool_thinking_title': 'Thinking',
-        'tool_thinking_desc': 'Think longer for better answers',
-        'tool_research_title': 'Deep research',
-        'tool_research_desc': 'Get a detailed report',
-        'tool_web_title': 'Web search',
-        'tool_web_desc': 'Find real-time news and info',
-        'tool_study_title': 'Study and learn',
-        'tool_study_desc': 'Learn a new concept',
-
-        // Toast Messages (Updated for clarity)
-        'lang_set_to': 'Output language set to English. All subsequent AI responses will be in English.',
-        'lang_switch_title': (current) => `Current output language: ${current}. Click to switch to Kurdish (کوردی).`,
-        
-        // Internal use
-        'lang_display': 'English',
-        'lang_api_instruction': "Respond naturally in English and follow the user's prompt.",
-    },
-    'ku': {
-        // General UI
-        'new_chat': 'چاتی نوێ',
-        'library': 'کتێبخانە',
-        'gpts': 'مۆدێلەکان',
-        'search': 'گەڕان',
-        'recent_chats_title': 'چاتە نوێکانی دوایی',
-        'no_recent_chats': 'هیچ چاتێکی نوێ نییە',
-        'home_title': 'چیم پێ دەکرێت بۆت؟',
-        'input_placeholder': 'پرسیار لە کوردیش جی پی تی بکە',
-        'input_attachment_aria': 'زیادکردنی پاشکۆ یان کردنەوەی ئامرازەکان',
-        'input_send_aria': 'ناردنی پەیام',
-        'input_voice_aria': 'دەنگی',
-        'explore_tools': 'پشکنینی ئامرازەکان',
-
-        // Prompt Suggestions
-        'prompt_image': 'وێنە دروست بکە',
-        'prompt_summarize': 'پوختەکردنی دەق',
-        'prompt_brainstorm': 'بیرکردنەوە',
-        'prompt_more': 'زیاتر',
-
-        // Tools Modal
-        'tool_camera': 'کامێرا',
-        'tool_photos': 'وێنەکان',
-        'tool_files': 'فایلەکان',
-        'tool_image_title': 'وێنە دروست بکە',
-        'tool_image_desc': 'هەر شتێک بهێنە بەرچاو',
-        'tool_thinking_title': 'بیرکردنەوە',
-        'tool_thinking_desc': 'زیاتر بیر بکەوە بۆ وەڵامی باشتر',
-        'tool_research_title': 'لێکۆڵینەوەی قووڵ',
-        'tool_research_desc': 'ڕاپۆرتێکی ووردو وەرگرە',
-        'tool_web_title': 'گەڕانی وێب',
-        'tool_web_desc': 'هەواڵی کاتی و زانیاری بدۆزەوە',
-        'tool_study_title': 'خوێندن و فێربوون',
-        'tool_study_desc': 'چەمکێکی نوێ فێربە',
-
-        // Toast Messages (Updated for clarity)
-        'lang_set_to': 'زمانی دەرچوون گۆڕا بۆ کوردی (کوردی). هەموو پەیامی وەڵامەکانی داهاتووی AI بە کوردی دەبێت.',
-        'lang_switch_title': (current) => `زمانی دەرچوونی ئێستا: ${current}. کلیک بکە بۆ گۆڕین بۆ ئینگلیزی.`,
-        
-        // Internal use
-        'lang_display': 'کوردی (کوردی)',
-        'lang_api_instruction': "All responses MUST be translated into Kurdish (Sorani dialect: کوردی) and follow the user's prompt. Ensure the response is in Kurdish.",
-    }
-};
-
-
-// --- LOCALIZATION & UI FIXES (These functions are now globally available to the HTML) ---
+// --- LOCALIZATION & UI FUNCTIONS (Exported to window for HTML access) ---
 
 /** Updates all static UI elements based on the currentLanguage state. */
 window.updateUIForLanguage = function() {
@@ -346,7 +211,6 @@ async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
     const apiUrl = `${GEMINI_CONFIG.API_BASE_URL_TEXT}/models/${model}:generateContent?key=${apiKey}`;
 
     // Build the chat history for context
-    // NOTE: This now correctly maps to the required 'role' values ('user' or 'model').
     const contents = chatHistory.map(msg => ({
         role: msg.role === 'model' ? 'model' : 'user', 
         parts: [{ text: msg.content }]
@@ -361,7 +225,7 @@ async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
         systemInstruction: {
             parts: [{ text: systemInstruction }]
         },
-        // IMPORTANT FIX: Use `Google Search` for grounding tool, not just `search`
+        // Using the corrected tool name: google_search
         ...(GEMINI_CONFIG.ENABLE_SEARCH_GROUNDING && { tools: [{ "google_search": {} }] })
     };
     
