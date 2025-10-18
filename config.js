@@ -1,4 +1,4 @@
-I want a change to Claude API key // Load configuration from environment variables
+ // Load configuration from environment variables
 const config = {
 GEMINI_API_KEY: "AIzaSyCP5npS46tVtCdd9d0NSSinmLBca-5D0n0",
 API_BASE_URL: "https://generativelanguage.googleapis.com/v1",
