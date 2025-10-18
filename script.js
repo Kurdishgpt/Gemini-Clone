@@ -32,11 +32,134 @@ const CONFIG = {
   }
 };
 
-// Language configurations
+// Language configurations with full UI translations
 const LANGUAGES = {
-  en: { name: 'English', code: 'en', instruction: '' },
-  ckb: { name: 'کوردیی ناوەندی', code: 'ckb', instruction: 'Please respond in Kurdish (Central Kurdish/Sorani):' },
-  ar: { name: 'العربية', code: 'ar', instruction: 'Please respond in Arabic:' }
+  en: { 
+    name: 'English', 
+    code: 'en', 
+    instruction: '',
+    translations: {
+      // Header
+      languageButton: 'English',
+      // Input
+      inputPlaceholder: 'Ask KurdishGPT',
+      // Home screen
+      homeTitle: 'What can I help with?',
+      // Suggestion buttons
+      createImage: 'Create image',
+      summarizeText: 'Summarize text',
+      brainstorm: 'Brainstorm',
+      more: 'More',
+      // Sidebar
+      search: 'Search',
+      newChat: 'New chat',
+      library: 'Library',
+      gpts: 'GPTs',
+      recentChats: 'Recent Chats',
+      noRecentChats: 'No recent chats',
+      // Tools modal
+      camera: 'Camera',
+      photos: 'Photos',
+      files: 'Files',
+      createImageTool: 'Create image',
+      createImageDesc: 'Visualize anything',
+      thinking: 'Thinking',
+      thinkingDesc: 'Think longer for better answers',
+      deepResearch: 'Deep research',
+      deepResearchDesc: 'Get a detailed report',
+      webSearch: 'Web search',
+      webSearchDesc: 'Find real-time news and info',
+      studyLearn: 'Study and learn',
+      studyLearnDesc: 'Learn a new concept',
+      exploreTools: 'Explore tools',
+      // Messages
+      languageChanged: 'Language changed to'
+    }
+  },
+  ckb: { 
+    name: 'کوردیی ناوەندی', 
+    code: 'ckb', 
+    instruction: 'Please respond in Kurdish (Central Kurdish/Sorani):',
+    translations: {
+      // Header
+      languageButton: 'کوردیی ناوەندی',
+      // Input
+      inputPlaceholder: 'پرسیار لە KurdishGPT بکە',
+      // Home screen
+      homeTitle: 'چۆن یارمەتیت بدەم؟',
+      // Suggestion buttons
+      createImage: 'دروستکردنی وێنە',
+      summarizeText: 'پوختەکردنی دەق',
+      brainstorm: 'بیرکردنەوە',
+      more: 'زیاتر',
+      // Sidebar
+      search: 'گەڕان',
+      newChat: 'گفتوگۆی نوێ',
+      library: 'کتێبخانە',
+      gpts: 'GPTs',
+      recentChats: 'گفتوگۆی ئەم دواییە',
+      noRecentChats: 'گفتوگۆی ئەم دواییە نییە',
+      // Tools modal
+      camera: 'کامێرا',
+      photos: 'وێنەکان',
+      files: 'فایلەکان',
+      createImageTool: 'دروستکردنی وێنە',
+      createImageDesc: 'هەر شتێک بینینی بکە',
+      thinking: 'بیرکردنەوە',
+      thinkingDesc: 'بیرکردنەوەی زیاتر بۆ وەڵامی باشتر',
+      deepResearch: 'لێکۆڵینەوەی قووڵ',
+      deepResearchDesc: 'ڕاپۆرتێکی ووردتر وەربگرە',
+      webSearch: 'گەڕانی ئینتەرنێت',
+      webSearchDesc: 'هەواڵ و زانیاری کاتی ڕاست بدۆزەرەوە',
+      studyLearn: 'خوێندن و فێربوون',
+      studyLearnDesc: 'چەمکێکی نوێ فێربە',
+      exploreTools: 'گەڕان لە ئامرازەکان',
+      // Messages
+      languageChanged: 'زمان گۆڕدرا بۆ'
+    }
+  },
+  ar: { 
+    name: 'العربية', 
+    code: 'ar', 
+    instruction: 'Please respond in Arabic:',
+    translations: {
+      // Header
+      languageButton: 'العربية',
+      // Input
+      inputPlaceholder: 'اسأل KurdishGPT',
+      // Home screen
+      homeTitle: 'كيف يمكنني المساعدة؟',
+      // Suggestion buttons
+      createImage: 'إنشاء صورة',
+      summarizeText: 'تلخيص النص',
+      brainstorm: 'عصف ذهني',
+      more: 'المزيد',
+      // Sidebar
+      search: 'بحث',
+      newChat: 'محادثة جديدة',
+      library: 'المكتبة',
+      gpts: 'GPTs',
+      recentChats: 'المحادثات الأخيرة',
+      noRecentChats: 'لا توجد محادثات أخيرة',
+      // Tools modal
+      camera: 'كاميرا',
+      photos: 'الصور',
+      files: 'الملفات',
+      createImageTool: 'إنشاء صورة',
+      createImageDesc: 'تصور أي شيء',
+      thinking: 'التفكير',
+      thinkingDesc: 'فكر لفترة أطول للحصول على إجابات أفضل',
+      deepResearch: 'بحث عميق',
+      deepResearchDesc: 'احصل على تقرير مفصل',
+      webSearch: 'البحث على الويب',
+      webSearchDesc: 'ابحث عن أخبار ومعلومات في الوقت الفعلي',
+      studyLearn: 'الدراسة والتعلم',
+      studyLearnDesc: 'تعلم مفهوماً جديداً',
+      exploreTools: 'استكشف الأدوات',
+      // Messages
+      languageChanged: 'تم تغيير اللغة إلى'
+    }
+  }
 };
 
 // Make CONFIG globally accessible
@@ -283,18 +406,67 @@ function handleToolAction(tool, prompt = '') {
   }
 }
 
+function updateUILanguage() {
+  const t = LANGUAGES[currentLanguage].translations;
+  
+  const elements = {
+    'language-label': t.languageButton,
+    'chat-input': { placeholder: t.inputPlaceholder },
+    'home-title': t.homeTitle,
+    'search-input': { placeholder: t.search },
+    'sidebar-new-chat': t.newChat,
+    'sidebar-library': t.library,
+    'sidebar-gpts': t.gpts,
+    'sidebar-recent-title': t.recentChats,
+    'sidebar-no-chats': t.noRecentChats,
+    'btn-create-image': t.createImage,
+    'btn-summarize': t.summarizeText,
+    'btn-brainstorm': t.brainstorm,
+    'btn-more': t.more,
+    'tool-camera': t.camera,
+    'tool-photos': t.photos,
+    'tool-files': t.files,
+    'tool-create-image': t.createImageTool,
+    'tool-create-image-desc': t.createImageDesc,
+    'tool-thinking': t.thinking,
+    'tool-thinking-desc': t.thinkingDesc,
+    'tool-research': t.deepResearch,
+    'tool-research-desc': t.deepResearchDesc,
+    'tool-search': t.webSearch,
+    'tool-search-desc': t.webSearchDesc,
+    'tool-study': t.studyLearn,
+    'tool-study-desc': t.studyLearnDesc,
+    'tool-explore': t.exploreTools
+  };
+  
+  for (const [id, value] of Object.entries(elements)) {
+    const element = document.getElementById(id);
+    if (element) {
+      if (typeof value === 'object') {
+        Object.assign(element, value);
+      } else {
+        element.textContent = value;
+      }
+    }
+  }
+  
+  if (currentLanguage === 'ar') {
+    document.body.style.direction = 'rtl';
+  } else {
+    document.body.style.direction = 'ltr';
+  }
+}
+
 function toggleLanguage() {
   const languageOrder = ['en', 'ckb', 'ar'];
   const currentIndex = languageOrder.indexOf(currentLanguage);
   const nextIndex = (currentIndex + 1) % languageOrder.length;
   currentLanguage = languageOrder[nextIndex];
   
-  const languageLabel = document.getElementById('language-label');
-  if (languageLabel) {
-    languageLabel.textContent = LANGUAGES[currentLanguage].name;
-  }
+  updateUILanguage();
   
-  showToast(`Language changed to ${LANGUAGES[currentLanguage].name}`);
+  const t = LANGUAGES[currentLanguage].translations;
+  showToast(`${t.languageChanged} ${LANGUAGES[currentLanguage].name}`);
 }
 
 // Make functions globally accessible
@@ -320,4 +492,5 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.key === "Enter") handleSendMessage();
     });
   lucide.createIcons();
+  updateUILanguage();
 });

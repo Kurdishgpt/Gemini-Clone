@@ -105,7 +105,7 @@
             <div class="flex items-center justify-between p-2 mb-4">
                 <div class="flex items-center text-gray-400">
                     <i data-lucide="search" class="w-5 h-5 mr-2"></i>
-                    <input type="text" placeholder="Search" class="bg-black text-white placeholder-gray-500 w-full focus:outline-none" />
+                    <input id="search-input" type="text" placeholder="Search" class="bg-black text-white placeholder-gray-500 w-full focus:outline-none" />
                 </div>
                 <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-1 rounded-full" aria-label="Close sidebar">
                     <i data-lucide="x" class="w-6 h-6"></i>
@@ -115,26 +115,26 @@
             <div class="space-y-1">
                 <a href="#" onclick="clearChat(); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white font-medium">
                     <i data-lucide="sparkles" class="w-5 h-5 mr-3 text-purple-400"></i>
-                    <span>New chat</span>
+                    <span id="sidebar-new-chat">New chat</span>
                 </a>
 
                 <a href="#" onclick="showFeatureNotAvailable('Library'); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white">
                     <i data-lucide="bookmark" class="w-5 h-5 mr-3 text-yellow-400"></i>
-                    <span>Library</span>
+                    <span id="sidebar-library">Library</span>
                 </a>
 
                 <a href="#" onclick="showFeatureNotAvailable('GPTs'); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white">
                     <i data-lucide="bot" class="w-5 h-5 mr-3 text-red-400"></i>
-                    <span>GPTs</span>
+                    <span id="sidebar-gpts">GPTs</span>
                 </a>
 
             </div>
 
             <!-- RECENT CHATS -->
             <div class="mt-6">
-                <h3 class="text-xs font-semibold uppercase text-gray-500 mb-2 px-3">Recent Chats</h3>
+                <h3 id="sidebar-recent-title" class="text-xs font-semibold uppercase text-gray-500 mb-2 px-3">Recent Chats</h3>
                 <div class="space-y-1">
-                    <p class="text-xs text-gray-600 px-3 py-1">No recent chats</p>
+                    <p id="sidebar-no-chats" class="text-xs text-gray-600 px-3 py-1">No recent chats</p>
                 </div>
             </div>
 
@@ -180,26 +180,26 @@
     <main id="main-content" class="flex-grow flex flex-col items-center justify-start p-4 overflow-y-auto" role="log">
 
         <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4">
-            <h1 class="text-3xl font-semibold mb-10 mt-16 text-center">What can I help with?</h1>
+            <h1 id="home-title" class="text-3xl font-semibold mb-10 mt-16 text-center">What can I help with?</h1>
 
             <!-- Prompt Suggestions with ChatGPT-like style -->
             <div id="suggestion-buttons" class="flex flex-wrap justify-center gap-3 w-full px-4 sm:px-0">
 
                 <button onclick="setPrompt(CONFIG.PROMPTS.image.trim())" class="prompt-button">
                     <i data-lucide="image" class="w-5 h-5 text-green-400"></i>
-                    <span>Create image</span>
+                    <span id="btn-create-image">Create image</span>
                 </button>
                 <button onclick="setPrompt(CONFIG.PROMPTS.summarize.trim())" class="prompt-button">
                     <i data-lucide="file-text" class="w-5 h-5 text-orange-400"></i>
-                    <span>Summarize text</span>
+                    <span id="btn-summarize">Summarize text</span>
                 </button>
                 <button onclick="setPrompt(CONFIG.PROMPTS.brainstorm.trim())" class="prompt-button">
                     <i data-lucide="lightbulb" class="w-5 h-5 text-yellow-400"></i>
-                    <span>Brainstorm</span>
+                    <span id="btn-brainstorm">Brainstorm</span>
                 </button>
                 <button onclick="setPrompt(CONFIG.PROMPTS.more.trim())" class="prompt-button">
                     <i data-lucide="more-horizontal" class="w-5 h-5 text-purple-400"></i>
-                    <span>More</span>
+                    <span id="btn-more">More</span>
                 </button>
             </div>
         </div>
@@ -225,17 +225,17 @@
                 <!-- Camera -->
                 <button onclick="handleToolAction('Camera')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="camera" class="w-8 h-8 mb-2 text-white"></i>
-                    <p>Camera</p>
+                    <p id="tool-camera">Camera</p>
                 </button>
                 <!-- Photos -->
                 <button onclick="handleToolAction('Photos')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="image" class="w-8 h-8 mb-2 text-white"></i>
-                    <p>Photos</p>
+                    <p id="tool-photos">Photos</p>
                 </button>
                 <!-- Files -->
                 <button onclick="handleToolAction('Files')" class="flex flex-col items-center p-4 rounded-xl text-sm font-medium transition-colors hover:bg-gray-800" style="background-color: #1f1f1f;">
                     <i data-lucide="folder" class="w-8 h-8 mb-2 text-white"></i>
-                    <p>Files</p>
+                    <p id="tool-files">Files</p>
                 </button>
             </div>
         </div>
@@ -246,8 +246,8 @@
             <button onclick="handleToolAction('Create image', CONFIG.PROMPTS.image)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="image" class="w-6 h-6 mr-4 text-green-400"></i>
                 <div>
-                    <p class="font-semibold text-white">Create image</p>
-                    <p class="text-xs text-gray-400">Visualize anything</p>
+                    <p id="tool-create-image" class="font-semibold text-white">Create image</p>
+                    <p id="tool-create-image-desc" class="text-xs text-gray-400">Visualize anything</p>
                 </div>
             </button>
 
@@ -255,8 +255,8 @@
             <button onclick="handleToolAction('Thinking', CONFIG.PROMPTS.thinking)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="lightbulb" class="w-6 h-6 mr-4 text-yellow-400"></i>
                 <div>
-                    <p class="font-semibold text-white">Thinking</p>
-                    <p class="text-xs text-gray-400">Think longer for better answers</p>
+                    <p id="tool-thinking" class="font-semibold text-white">Thinking</p>
+                    <p id="tool-thinking-desc" class="text-xs text-gray-400">Think longer for better answers</p>
                 </div>
             </button>
 
@@ -264,8 +264,8 @@
             <button onclick="handleToolAction('Deep research', CONFIG.PROMPTS.research)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="flask-round" class="w-6 h-6 mr-4 text-red-400"></i>
                 <div>
-                    <p class="font-semibold text-white">Deep research</p>
-                    <p class="text-xs text-gray-400">Get a detailed report</p>
+                    <p id="tool-research" class="font-semibold text-white">Deep research</p>
+                    <p id="tool-research-desc" class="text-xs text-gray-400">Get a detailed report</p>
                 </div>
             </button>
 
@@ -273,8 +273,8 @@
             <button onclick="handleToolAction('Web search', CONFIG.PROMPTS.search)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="globe" class="w-6 h-6 mr-4 text-blue-400"></i>
                 <div>
-                    <p class="font-semibold text-white">Web search</p>
-                    <p class="text-xs text-gray-400">Find real-time news and info</p>
+                    <p id="tool-search" class="font-semibold text-white">Web search</p>
+                    <p id="tool-search-desc" class="text-xs text-gray-400">Find real-time news and info</p>
                 </div>
             </button>
 
@@ -282,8 +282,8 @@
             <button onclick="handleToolAction('Study and learn', CONFIG.PROMPTS.study)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
                 <i data-lucide="book-open-text" class="w-6 h-6 mr-4 text-purple-400"></i>
                 <div>
-                    <p class="font-semibold text-white">Study and learn</p>
-                    <p class="text-xs text-gray-400">Learn a new concept</p>
+                    <p id="tool-study" class="font-semibold text-white">Study and learn</p>
+                    <p id="tool-study-desc" class="text-xs text-gray-400">Learn a new concept</p>
                 </div>
             </button>
         </div>
@@ -291,7 +291,7 @@
         <!-- Explore Tools Button -->
         <div class="p-6">
             <button onclick="handleToolAction('Explore tools')" class="w-full py-3 rounded-full font-bold text-center transition-colors" style="background-color: var(--ai-bubble); color: var(--text-light);">
-                Explore tools
+                <span id="tool-explore">Explore tools</span>
             </button>
         </div>
     </div>
