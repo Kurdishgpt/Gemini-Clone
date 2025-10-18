@@ -17,7 +17,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Showdown for Markdown -->
+  <!-- Showdown Markdown -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
 
   <style>
@@ -88,10 +88,105 @@
 </head>
 
 <body class="flex flex-col h-screen antialiased">
-  <!-- HEADER, SIDEBAR, MAIN, and FOOTER are the same as your version -->
-  <!-- keep them unchanged -->
 
-  <!-- ✅ Correct Script Import -->
+  <!-- SIDEBAR BACKDROP -->
+  <div id="sidebar-backdrop" onclick="toggleSidebar()"
+    class="fixed inset-0 bg-black bg-opacity-75 z-40 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
+
+  <!-- SIDEBAR MENU -->
+  <aside id="sidebar-menu"
+    class="fixed top-0 left-0 h-full w-64 bg-black z-50 transform -translate-x-full transition-transform duration-300 shadow-2xl flex flex-col justify-between p-4 border-r border-gray-900">
+    <div>
+      <h2 class="text-lg font-semibold mb-4">Menu</h2>
+      <ul class="space-y-3">
+        <li><button onclick="showFeatureNotAvailable('History')" class="text-left w-full text-gray-300 hover:text-white">Chat History</button></li>
+        <li><button onclick="showFeatureNotAvailable('Saved')" class="text-left w-full text-gray-300 hover:text-white">Saved Chats</button></li>
+        <li><button onclick="showFeatureNotAvailable('Settings')" class="text-left w-full text-gray-300 hover:text-white">Settings</button></li>
+      </ul>
+    </div>
+    <div class="border-t border-gray-800 pt-4">
+      <button onclick="showFeatureNotAvailable('Logout')" class="text-gray-400 hover:text-white w-full text-left">Log Out</button>
+    </div>
+  </aside>
+
+  <!-- HEADER -->
+  <header class="flex justify-between items-center p-4 h-16 sticky top-0 bg-black z-20 border-b border-gray-900">
+    <button onclick="toggleSidebar()" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors">
+      <i data-lucide="menu" class="w-6 h-6"></i>
+    </button>
+
+    <div class="flex-grow flex justify-center">
+      <button onclick="showFeatureNotAvailable('Get Plus')"
+        class="flex items-center px-4 py-2 rounded-full font-semibold transition-colors shadow-lg text-white"
+        style="background-color: var(--purple-prime);">
+        <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
+        Get Plus
+      </button>
+    </div>
+
+    <button onclick="clearChat()" class="text-white p-2 rounded-full hover:bg-gray-900 transition-colors">
+      <i data-lucide="rotate-cw" class="w-6 h-6"></i>
+    </button>
+  </header>
+
+  <!-- MAIN CHAT AREA -->
+  <main id="main-content" class="flex-grow flex flex-col items-center justify-start p-4 overflow-y-auto" role="log">
+    <!-- Home Screen -->
+    <div id="home-screen" class="w-full max-w-xl text-center flex flex-col items-center p-4">
+      <h1 class="text-3xl font-semibold mb-10 mt-16 text-center">What can I help with?</h1>
+      <div id="suggestion-buttons" class="flex flex-wrap justify-center gap-3 w-full px-4 sm:px-0">
+        <button onclick="setPrompt(CONFIG.PROMPTS.image)" class="prompt-button">
+          <i data-lucide="image" class="w-5 h-5 text-green-400"></i>
+          <span>Create image</span>
+        </button>
+        <button onclick="setPrompt(CONFIG.PROMPTS.summarize)" class="prompt-button">
+          <i data-lucide="file-text" class="w-5 h-5 text-orange-400"></i>
+          <span>Summarize text</span>
+        </button>
+        <button onclick="setPrompt(CONFIG.PROMPTS.brainstorm)" class="prompt-button">
+          <i data-lucide="lightbulb" class="w-5 h-5 text-yellow-400"></i>
+          <span>Brainstorm</span>
+        </button>
+        <button onclick="setPrompt(CONFIG.PROMPTS.more)" class="prompt-button">
+          <i data-lucide="more-horizontal" class="w-5 h-5 text-purple-400"></i>
+          <span>More</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div id="chat-container-scrollable"
+      class="hidden w-full h-full max-w-2xl mx-auto overflow-y-auto pt-4 pb-20"></div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer id="input-container" class="fixed bottom-0 w-full max-w-2xl mx-auto p-4 flex flex-col items-center">
+    <div class="w-full flex items-end p-2 rounded-2xl border"
+      style="background-color: var(--input-dark); border-color: var(--input-border);">
+      <button id="attachment-button" onclick="openAddToolsModal()"
+        class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors">
+        <i data-lucide="plus" class="w-6 h-6"></i>
+      </button>
+
+      <div class="flex flex-grow items-center mx-1">
+        <input id="chat-input" type="text" placeholder="Ask KurdishGPT"
+          oninput="checkInputStatus()"
+          class="w-full bg-transparent text-white focus:outline-none py-2 text-base" />
+      </div>
+
+      <button id="send-button" onclick="handleSendMessage()"
+        class="flex-shrink-0 p-2 text-blue-400 hover:text-blue-300 transition-colors hidden">
+        <i data-lucide="send" class="w-6 h-6"></i>
+      </button>
+
+      <button id="mic-button" onclick="showFeatureNotAvailable('Voice Input')"
+        class="flex-shrink-0 p-2 text-gray-500 hover:text-white transition-colors">
+        <i data-lucide="volume-2" class="w-6 h-6"></i>
+      </button>
+    </div>
+  </footer>
+
+  <!-- ✅ Connect JS Modules -->
   <script type="module" src="./script.js"></script>
 </body>
 </html>
