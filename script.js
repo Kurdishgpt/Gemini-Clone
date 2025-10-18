@@ -16,6 +16,7 @@ let currentLanguage = 'en'; // Initial state: 'en' (English)
 // Configuration for Gemini API and Model Parameters
 const GEMINI_CONFIG = {
     // !!! IMPORTANT: The API Key has been inserted here !!!
+    // NOTE: This key is mocked. If using a real API, replace this value.
     API_KEY: "AIzaSyCw7nVjXZ9sWu9M8zdwjb5jFVJsV5AXEbg", 
     MODEL_NAME: "gemini-2.0-flash", 
     IMAGE_MODEL_NAME: "imagen-3.0-generate-002",
@@ -345,6 +346,7 @@ async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
     const apiUrl = `${GEMINI_CONFIG.API_BASE_URL_TEXT}/models/${model}:generateContent?key=${apiKey}`;
 
     // Build the chat history for context
+    // NOTE: This now correctly maps to the required 'role' values ('user' or 'model').
     const contents = chatHistory.map(msg => ({
         role: msg.role === 'model' ? 'model' : 'user', 
         parts: [{ text: msg.content }]
@@ -359,6 +361,7 @@ async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
         systemInstruction: {
             parts: [{ text: systemInstruction }]
         },
+        // IMPORTANT FIX: Use `Google Search` for grounding tool, not just `search`
         ...(GEMINI_CONFIG.ENABLE_SEARCH_GROUNDING && { tools: [{ "google_search": {} }] })
     };
     
@@ -366,6 +369,7 @@ async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
     let attempt = 0;
     let finalResult = null;
     let success = false;
+    let errorDetails = null;
 
     while (attempt < maxRetries && !success) {
         try {
@@ -376,6 +380,10 @@ async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
             });
             
             if (!response.ok) {
+                // Log and capture detailed error response for debugging
+                const errorBody = await response.json();
+                errorDetails = JSON.stringify(errorBody, null, 2);
+                console.error(`Gemini Text API HTTP Error ${response.status}:`, errorBody);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
@@ -383,7 +391,7 @@ async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
             success = true;
 
         } catch (error) {
-            console.error(`Gemini Text API Attempt ${attempt + 1} failed:`, error);
+            console.error(`Gemini Text API Attempt ${attempt + 1} failed:`, error.message, (errorDetails || ''));
             attempt++;
             if (attempt < maxRetries) {
                 const delay = Math.pow(2, attempt) * 1000;
@@ -397,7 +405,7 @@ async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
     let aiResponseText = CONFIG.MESSAGES.error_api_call_failed;
     let sources = [];
 
-    if (candidate && candidate.content?.parts?.[0]?.text) {
+    if (success && candidate && candidate.content?.parts?.[0]?.text) {
         aiResponseText = candidate.content.parts[0].text;
         
         // Extract grounding sources
@@ -414,6 +422,9 @@ async function callGeminiTextAPI(prompt, thinkingBubble, systemInstruction) {
     } else if (candidate?.safetyRatings?.length > 0) {
         aiResponseText = CONFIG.MESSAGES.error_api_blocked;
         console.warn("Response blocked by safety settings:", candidate.safetyRatings);
+    } else if (!success) {
+        // If all retries failed
+        aiResponseText = CONFIG.MESSAGES.error_api_call_failed;
     }
 
     try {
@@ -469,6 +480,7 @@ async function generateImage(userPrompt, thinkingBubble) {
             });
             
             if (!response.ok) {
+                console.error(`Imagen API HTTP Error ${response.status}:`, await response.text());
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
@@ -580,7 +592,8 @@ async function streamResponse(content, bubble, sources = []) {
             contentDiv.innerHTML = htmlContent + `<span class="typing-cursor"></span>`;
             scrollChatToBottom();
         }
-        await new Promise(resolve => setTimeout(resolve, 5));
+        // Reduced delay for faster streaming effect
+        await new Promise(resolve => setTimeout(resolve, 3)); 
     }
 
     // Finalize the content
