@@ -303,13 +303,21 @@ async function callGeminiAPI(prompt) {
       }
     );
 
-    if (!response.ok) throw new Error("API request failed");
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData?.error?.message || `API request failed with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
     const data = await response.json();
     return (
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       CONFIG.MESSAGES.error_api_call_failed
     );
   } catch (err) {
+    console.error("API Error:", err);
+    if (err.message.includes("overloaded")) {
+      return "⚠️ The AI service is currently experiencing high demand. Please try again in a moment.";
+    }
     return "❌ " + err.message;
   }
 }
@@ -399,7 +407,13 @@ function closeAddToolsModal() {
 
 function handleToolAction(tool, prompt = '') {
   closeAddToolsModal();
-  if (prompt) {
+  if (tool === 'Camera') {
+    document.getElementById('camera-input').click();
+  } else if (tool === 'Photos') {
+    document.getElementById('photos-input').click();
+  } else if (tool === 'Files') {
+    document.getElementById('files-input').click();
+  } else if (prompt) {
     setPrompt(prompt);
   } else {
     showFeatureNotAvailable(tool);
@@ -469,6 +483,70 @@ function toggleLanguage() {
   showToast(`${t.languageChanged} ${LANGUAGES[currentLanguage].name}`);
 }
 
+function handleFileUpload(files) {
+  if (!files || files.length === 0) return;
+  
+  document.getElementById("home-screen").classList.add("hidden");
+  document.getElementById("chat-container-scrollable").classList.remove("hidden");
+  
+  Array.from(files).forEach(file => {
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        renderImageMessage('user', e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+function renderImageMessage(role, imageSrc) {
+  const chatContainer = document.getElementById("chat-container-scrollable");
+  const wrapper = document.createElement("div");
+  wrapper.className = `flex mb-4 ${
+    role === "user" ? "justify-end" : "justify-start"
+  }`;
+
+  const bubble = document.createElement("div");
+  bubble.className =
+    "rounded-xl p-2 max-w-[85%] sm:max-w-[70%] shadow-lg";
+  bubble.style.backgroundColor =
+    role === "user" ? "var(--user-bubble)" : "var(--ai-bubble)";
+
+  const img = document.createElement("img");
+  img.src = imageSrc;
+  img.className = "rounded-lg max-w-full h-auto";
+  img.style.maxHeight = "400px";
+  img.onclick = () => openImageViewer(imageSrc);
+  img.style.cursor = "pointer";
+  
+  bubble.appendChild(img);
+  wrapper.appendChild(bubble);
+  chatContainer.appendChild(wrapper);
+  scrollChatToBottom();
+}
+
+function openImageViewer(imageSrc) {
+  const viewer = document.createElement('div');
+  viewer.className = 'fixed inset-0 z-50 bg-black bg-opacity-95 flex items-center justify-center';
+  viewer.onclick = () => viewer.remove();
+  
+  const img = document.createElement('img');
+  img.src = imageSrc;
+  img.className = 'max-w-full max-h-full object-contain';
+  img.onclick = (e) => e.stopPropagation();
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'absolute top-4 right-4 text-white p-2 hover:bg-gray-800 rounded-full';
+  closeBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
+  closeBtn.onclick = () => viewer.remove();
+  
+  viewer.appendChild(img);
+  viewer.appendChild(closeBtn);
+  document.body.appendChild(viewer);
+  lucide.createIcons();
+}
+
 // Make functions globally accessible
 window.clearChat = clearChat;
 window.showFeatureNotAvailable = showFeatureNotAvailable;
@@ -480,6 +558,7 @@ window.handleToolAction = handleToolAction;
 window.handleSendMessage = handleSendMessage;
 window.checkInputStatus = checkInputStatus;
 window.toggleLanguage = toggleLanguage;
+window.handleFileUpload = handleFileUpload;
 
 // --- INIT ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -491,6 +570,22 @@ document.addEventListener("DOMContentLoaded", () => {
     .addEventListener("keypress", (e) => {
       if (e.key === "Enter") handleSendMessage();
     });
+  
+  document.getElementById('camera-input').addEventListener('change', (e) => {
+    handleFileUpload(e.target.files);
+    e.target.value = '';
+  });
+  
+  document.getElementById('photos-input').addEventListener('change', (e) => {
+    handleFileUpload(e.target.files);
+    e.target.value = '';
+  });
+  
+  document.getElementById('files-input').addEventListener('change', (e) => {
+    handleFileUpload(e.target.files);
+    e.target.value = '';
+  });
+  
   lucide.createIcons();
   updateUILanguage();
 });
