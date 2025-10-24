@@ -4,7 +4,6 @@ import config from "./config.js";
 let chatHistory = [];
 let isTyping = false;
 let currentLanguage = 'en'; // 'en' for English, 'ckb' for Kurdish Central, 'ar' for Arabic
-let uploadedFiles = [];
 
 // --- CONFIG ---
 const CONFIG = {
@@ -220,7 +219,7 @@ function copyToClipboard(text) {
 }
 
 // --- RENDER MESSAGES ---
-function renderMessage(role, content, isThinking = false, attachedImages = []) {
+function renderMessage(role, content, isThinking = false) {
   const chatContainer = document.getElementById("chat-container-scrollable");
   const wrapper = document.createElement("div");
   wrapper.className = `flex mb-4 ${
@@ -235,21 +234,7 @@ function renderMessage(role, content, isThinking = false, attachedImages = []) {
   bubble.style.color = "var(--text-light)";
 
   if (role === "user") {
-    if (attachedImages.length > 0) {
-      const imagesDiv = document.createElement('div');
-      imagesDiv.className = 'flex flex-wrap gap-2 mb-2';
-      attachedImages.forEach(img => {
-        const imgElement = document.createElement('img');
-        imgElement.src = img.preview;
-        imgElement.alt = img.name;
-        imgElement.className = 'w-20 h-20 object-cover rounded-lg border border-gray-500';
-        imagesDiv.appendChild(imgElement);
-      });
-      bubble.appendChild(imagesDiv);
-    }
-    const textDiv = document.createElement('p');
-    textDiv.textContent = content;
-    bubble.appendChild(textDiv);
+    bubble.innerHTML = `<p>${content}</p>`;
   } else {
     const contentDiv = document.createElement("div");
     contentDiv.className = "markdown-content pb-2";
@@ -303,21 +288,9 @@ function renderMessage(role, content, isThinking = false, attachedImages = []) {
 // --- GEMINI API CALL ---
 async function callGeminiAPI(prompt) {
   try {
+    // Add language instruction to prompt if not English
     const languageInstruction = LANGUAGES[currentLanguage].instruction;
     const fullPrompt = languageInstruction ? `${languageInstruction}\n\n${prompt}` : prompt;
-    
-    const parts = [{ text: fullPrompt }];
-    
-    if (uploadedFiles.length > 0) {
-      for (const file of uploadedFiles) {
-        parts.push({
-          inline_data: {
-            mime_type: file.type,
-            data: file.data
-          }
-        });
-      }
-    }
     
     const response = await fetch(
       `${CONFIG.API_BASE_URL}/models/${CONFIG.MODEL_NAME}:generateContent?key=${CONFIG.GEMINI_API_KEY}`,
@@ -325,7 +298,7 @@ async function callGeminiAPI(prompt) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: parts }],
+          contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
         }),
       }
     );
@@ -350,9 +323,8 @@ async function handleSendMessage() {
   document.getElementById("home-screen").classList.add("hidden");
   document.getElementById("chat-container-scrollable").classList.remove("hidden");
 
-  const attachedImages = [...uploadedFiles];
   chatHistory.push({ role: "user", content: message });
-  renderMessage("user", message, false, attachedImages);
+  renderMessage("user", message);
 
   input.value = "";
   checkInputStatus();
@@ -362,20 +334,15 @@ async function handleSendMessage() {
   const aiBubble = renderMessage("model", "", true);
   const contentDiv = aiBubble.querySelector(".markdown-content");
 
+  // Call Gemini API
   const reply = await callGeminiAPI(message);
 
+  // Replace thinking bubble with AI response
   contentDiv.innerHTML = converter.makeHtml(reply);
   const footer = aiBubble.querySelector(".ai-bubble-footer");
   if (footer) footer.classList.remove("hidden");
 
   chatHistory.push({ role: "model", content: reply });
-  
-  uploadedFiles = [];
-  const previewContainer = document.getElementById('file-preview-container');
-  if (previewContainer) {
-    previewContainer.remove();
-  }
-  
   input.disabled = false;
   input.focus();
   isTyping = false;
@@ -385,11 +352,6 @@ async function handleSendMessage() {
 // --- CLEAR CHAT ---
 function clearChat() {
   chatHistory = [];
-  uploadedFiles = [];
-  const previewContainer = document.getElementById('file-preview-container');
-  if (previewContainer) {
-    previewContainer.remove();
-  }
   document.getElementById("chat-container-scrollable").innerHTML = "";
   document.getElementById("chat-container-scrollable").classList.add("hidden");
   document.getElementById("home-screen").classList.remove("hidden");
@@ -437,14 +399,7 @@ function closeAddToolsModal() {
 
 function handleToolAction(tool, prompt = '') {
   closeAddToolsModal();
-  
-  if (tool === 'Camera') {
-    document.getElementById('camera-input').click();
-  } else if (tool === 'Photos') {
-    document.getElementById('photos-input').click();
-  } else if (tool === 'Files') {
-    document.getElementById('files-input').click();
-  } else if (prompt) {
+  if (prompt) {
     setPrompt(prompt);
   } else {
     showFeatureNotAvailable(tool);
@@ -514,70 +469,6 @@ function toggleLanguage() {
   showToast(`${t.languageChanged} ${LANGUAGES[currentLanguage].name}`);
 }
 
-async function handleFileSelection(event) {
-  const files = Array.from(event.target.files);
-  if (files.length === 0) return;
-
-  for (const file of files) {
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64Data = e.target.result.split(',')[1];
-        uploadedFiles.push({
-          name: file.name,
-          type: file.type,
-          data: base64Data,
-          preview: e.target.result
-        });
-        showFilePreview(file.name, e.target.result, file.type);
-        showToast(`Image "${file.name}" added`);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      showToast(`File type not supported: ${file.type}`);
-    }
-  }
-  
-  event.target.value = '';
-}
-
-function showFilePreview(fileName, previewUrl, fileType) {
-  const input = document.getElementById('chat-input');
-  const inputContainer = input.parentElement;
-  
-  let previewContainer = document.getElementById('file-preview-container');
-  if (!previewContainer) {
-    previewContainer = document.createElement('div');
-    previewContainer.id = 'file-preview-container';
-    previewContainer.className = 'flex gap-2 mb-2 overflow-x-auto';
-    inputContainer.parentElement.insertBefore(previewContainer, inputContainer);
-  }
-  
-  const previewItem = document.createElement('div');
-  previewItem.className = 'relative flex-shrink-0';
-  previewItem.innerHTML = `
-    <img src="${previewUrl}" alt="${fileName}" class="w-16 h-16 object-cover rounded-lg border border-gray-600">
-    <button onclick="removeFilePreview(this, '${fileName}')" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700">
-      ×
-    </button>
-  `;
-  previewContainer.appendChild(previewItem);
-  
-  input.focus();
-}
-
-function removeFilePreview(button, fileName) {
-  uploadedFiles = uploadedFiles.filter(f => f.name !== fileName);
-  button.parentElement.remove();
-  
-  const previewContainer = document.getElementById('file-preview-container');
-  if (previewContainer && previewContainer.children.length === 0) {
-    previewContainer.remove();
-  }
-  
-  showToast(`Removed "${fileName}"`);
-}
-
 // Make functions globally accessible
 window.clearChat = clearChat;
 window.showFeatureNotAvailable = showFeatureNotAvailable;
@@ -589,7 +480,6 @@ window.handleToolAction = handleToolAction;
 window.handleSendMessage = handleSendMessage;
 window.checkInputStatus = checkInputStatus;
 window.toggleLanguage = toggleLanguage;
-window.removeFilePreview = removeFilePreview;
 
 // --- INIT ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -601,11 +491,6 @@ document.addEventListener("DOMContentLoaded", () => {
     .addEventListener("keypress", (e) => {
       if (e.key === "Enter") handleSendMessage();
     });
-  
-  document.getElementById('camera-input').addEventListener('change', handleFileSelection);
-  document.getElementById('photos-input').addEventListener('change', handleFileSelection);
-  document.getElementById('files-input').addEventListener('change', handleFileSelection);
-  
   lucide.createIcons();
   updateUILanguage();
 });
