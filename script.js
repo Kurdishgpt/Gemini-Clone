@@ -77,87 +77,87 @@ const LANGUAGES = {
     }
   },
   ckb: { 
-    name: 'کوردیی ناوەندی', 
+    name: 'Ú©ÙˆØ±Ø¯ÛŒÛŒ Ù†Ø§ÙˆÛ•Ù†Ø¯ÛŒ', 
     code: 'ckb', 
     instruction: 'Please respond in Kurdish (Central Kurdish/Sorani):',
     translations: {
       // Header
-      languageButton: 'کوردیی ناوەندی',
+      languageButton: 'Ú©ÙˆØ±Ø¯ÛŒÛŒ Ù†Ø§ÙˆÛ•Ù†Ø¯ÛŒ',
       // Input
-      inputPlaceholder: 'پرسیار لە KurdishGPT بکە',
+      inputPlaceholder: 'Ù¾Ø±Ø³ÛŒØ§Ø± Ù„Û• KurdishGPT Ø¨Ú©Û•',
       // Home screen
-      homeTitle: 'چۆن یارمەتیت بدەم؟',
+      homeTitle: 'Ú†Û†Ù† ÛŒØ§Ø±Ù…Û•ØªÛŒØª Ø¨Ø¯Û•Ù…ØŸ',
       // Suggestion buttons
-      createImage: 'دروستکردنی وێنە',
-      summarizeText: 'پوختەکردنی دەق',
-      brainstorm: 'بیرکردنەوە',
-      more: 'زیاتر',
+      createImage: 'Ø¯Ø±ÙˆØ³ØªÚ©Ø±Ø¯Ù†ÛŒ ÙˆÛŽÙ†Û•',
+      summarizeText: 'Ù¾ÙˆØ®ØªÛ•Ú©Ø±Ø¯Ù†ÛŒ Ø¯Û•Ù‚',
+      brainstorm: 'Ø¨ÛŒØ±Ú©Ø±Ø¯Ù†Û•ÙˆÛ•',
+      more: 'Ø²ÛŒØ§ØªØ±',
       // Sidebar
-      search: 'گەڕان',
-      newChat: 'گفتوگۆی نوێ',
-      library: 'کتێبخانە',
+      search: 'Ú¯Û•Ú•Ø§Ù†',
+      newChat: 'Ú¯ÙØªÙˆÚ¯Û†ÛŒ Ù†ÙˆÛŽ',
+      library: 'Ú©ØªÛŽØ¨Ø®Ø§Ù†Û•',
       gpts: 'GPTs',
-      recentChats: 'گفتوگۆی ئەم دواییە',
-      noRecentChats: 'گفتوگۆی ئەم دواییە نییە',
+      recentChats: 'Ú¯ÙØªÙˆÚ¯Û†ÛŒ Ø¦Û•Ù… Ø¯ÙˆØ§ÛŒÛŒÛ•',
+      noRecentChats: 'Ú¯ÙØªÙˆÚ¯Û†ÛŒ Ø¦Û•Ù… Ø¯ÙˆØ§ÛŒÛŒÛ• Ù†ÛŒÛŒÛ•',
       // Tools modal
-      camera: 'کامێرا',
-      photos: 'وێنەکان',
-      files: 'فایلەکان',
-      createImageTool: 'دروستکردنی وێنە',
-      createImageDesc: 'هەر شتێک بینینی بکە',
-      thinking: 'بیرکردنەوە',
-      thinkingDesc: 'بیرکردنەوەی زیاتر بۆ وەڵامی باشتر',
-      deepResearch: 'لێکۆڵینەوەی قووڵ',
-      deepResearchDesc: 'ڕاپۆرتێکی ووردتر وەربگرە',
-      webSearch: 'گەڕانی ئینتەرنێت',
-      webSearchDesc: 'هەواڵ و زانیاری کاتی ڕاست بدۆزەرەوە',
-      studyLearn: 'خوێندن و فێربوون',
-      studyLearnDesc: 'چەمکێکی نوێ فێربە',
-      exploreTools: 'گەڕان لە ئامرازەکان',
+      camera: 'Ú©Ø§Ù…ÛŽØ±Ø§',
+      photos: 'ÙˆÛŽÙ†Û•Ú©Ø§Ù†',
+      files: 'ÙØ§ÛŒÙ„Û•Ú©Ø§Ù†',
+      createImageTool: 'Ø¯Ø±ÙˆØ³ØªÚ©Ø±Ø¯Ù†ÛŒ ÙˆÛŽÙ†Û•',
+      createImageDesc: 'Ù‡Û•Ø± Ø´ØªÛŽÚ© Ø¨ÛŒÙ†ÛŒÙ†ÛŒ Ø¨Ú©Û•',
+      thinking: 'Ø¨ÛŒØ±Ú©Ø±Ø¯Ù†Û•ÙˆÛ•',
+      thinkingDesc: 'Ø¨ÛŒØ±Ú©Ø±Ø¯Ù†Û•ÙˆÛ•ÛŒ Ø²ÛŒØ§ØªØ± Ø¨Û† ÙˆÛ•ÚµØ§Ù…ÛŒ Ø¨Ø§Ø´ØªØ±',
+      deepResearch: 'Ù„ÛŽÚ©Û†ÚµÛŒÙ†Û•ÙˆÛ•ÛŒ Ù‚ÙˆÙˆÚµ',
+      deepResearchDesc: 'Ú•Ø§Ù¾Û†Ø±ØªÛŽÚ©ÛŒ ÙˆÙˆØ±Ø¯ØªØ± ÙˆÛ•Ø±Ø¨Ú¯Ø±Û•',
+      webSearch: 'Ú¯Û•Ú•Ø§Ù†ÛŒ Ø¦ÛŒÙ†ØªÛ•Ø±Ù†ÛŽØª',
+      webSearchDesc: 'Ù‡Û•ÙˆØ§Úµ Ùˆ Ø²Ø§Ù†ÛŒØ§Ø±ÛŒ Ú©Ø§ØªÛŒ Ú•Ø§Ø³Øª Ø¨Ø¯Û†Ø²Û•Ø±Û•ÙˆÛ•',
+      studyLearn: 'Ø®ÙˆÛŽÙ†Ø¯Ù† Ùˆ ÙÛŽØ±Ø¨ÙˆÙˆÙ†',
+      studyLearnDesc: 'Ú†Û•Ù…Ú©ÛŽÚ©ÛŒ Ù†ÙˆÛŽ ÙÛŽØ±Ø¨Û•',
+      exploreTools: 'Ú¯Û•Ú•Ø§Ù† Ù„Û• Ø¦Ø§Ù…Ø±Ø§Ø²Û•Ú©Ø§Ù†',
       // Messages
-      languageChanged: 'زمان گۆڕدرا بۆ'
+      languageChanged: 'Ø²Ù…Ø§Ù† Ú¯Û†Ú•Ø¯Ø±Ø§ Ø¨Û†'
     }
   },
   ar: { 
-    name: 'العربية', 
+    name: 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©', 
     code: 'ar', 
     instruction: 'Please respond in Arabic:',
     translations: {
       // Header
-      languageButton: 'العربية',
+      languageButton: 'Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©',
       // Input
-      inputPlaceholder: 'اسأل KurdishGPT',
+      inputPlaceholder: 'Ø§Ø³Ø£Ù„ KurdishGPT',
       // Home screen
-      homeTitle: 'كيف يمكنني المساعدة؟',
+      homeTitle: 'ÙƒÙŠÙ ÙŠÙ…ÙƒÙ†Ù†ÙŠ Ø§Ù„Ù…Ø³Ø§Ø¹Ø¯Ø©ØŸ',
       // Suggestion buttons
-      createImage: 'إنشاء صورة',
-      summarizeText: 'تلخيص النص',
-      brainstorm: 'عصف ذهني',
-      more: 'المزيد',
+      createImage: 'Ø¥Ù†Ø´Ø§Ø¡ ØµÙˆØ±Ø©',
+      summarizeText: 'ØªÙ„Ø®ÙŠØµ Ø§Ù„Ù†Øµ',
+      brainstorm: 'Ø¹ØµÙ Ø°Ù‡Ù†ÙŠ',
+      more: 'Ø§Ù„Ù…Ø²ÙŠØ¯',
       // Sidebar
-      search: 'بحث',
-      newChat: 'محادثة جديدة',
-      library: 'المكتبة',
+      search: 'Ø¨Ø­Ø«',
+      newChat: 'Ù…Ø­Ø§Ø¯Ø«Ø© Ø¬Ø¯ÙŠØ¯Ø©',
+      library: 'Ø§Ù„Ù…ÙƒØªØ¨Ø©',
       gpts: 'GPTs',
-      recentChats: 'المحادثات الأخيرة',
-      noRecentChats: 'لا توجد محادثات أخيرة',
+      recentChats: 'Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø§Øª Ø§Ù„Ø£Ø®ÙŠØ±Ø©',
+      noRecentChats: 'Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ø­Ø§Ø¯Ø«Ø§Øª Ø£Ø®ÙŠØ±Ø©',
       // Tools modal
-      camera: 'كاميرا',
-      photos: 'الصور',
-      files: 'الملفات',
-      createImageTool: 'إنشاء صورة',
-      createImageDesc: 'تصور أي شيء',
-      thinking: 'التفكير',
-      thinkingDesc: 'فكر لفترة أطول للحصول على إجابات أفضل',
-      deepResearch: 'بحث عميق',
-      deepResearchDesc: 'احصل على تقرير مفصل',
-      webSearch: 'البحث على الويب',
-      webSearchDesc: 'ابحث عن أخبار ومعلومات في الوقت الفعلي',
-      studyLearn: 'الدراسة والتعلم',
-      studyLearnDesc: 'تعلم مفهوماً جديداً',
-      exploreTools: 'استكشف الأدوات',
+      camera: 'ÙƒØ§Ù…ÙŠØ±Ø§',
+      photos: 'Ø§Ù„ØµÙˆØ±',
+      files: 'Ø§Ù„Ù…Ù„ÙØ§Øª',
+      createImageTool: 'Ø¥Ù†Ø´Ø§Ø¡ ØµÙˆØ±Ø©',
+      createImageDesc: 'ØªØµÙˆØ± Ø£ÙŠ Ø´ÙŠØ¡',
+      thinking: 'Ø§Ù„ØªÙÙƒÙŠØ±',
+      thinkingDesc: 'ÙÙƒØ± Ù„ÙØªØ±Ø© Ø£Ø·ÙˆÙ„ Ù„Ù„Ø­ØµÙˆÙ„ Ø¹Ù„Ù‰ Ø¥Ø¬Ø§Ø¨Ø§Øª Ø£ÙØ¶Ù„',
+      deepResearch: 'Ø¨Ø­Ø« Ø¹Ù…ÙŠÙ‚',
+      deepResearchDesc: 'Ø§Ø­ØµÙ„ Ø¹Ù„Ù‰ ØªÙ‚Ø±ÙŠØ± Ù…ÙØµÙ„',
+      webSearch: 'Ø§Ù„Ø¨Ø­Ø« Ø¹Ù„Ù‰ Ø§Ù„ÙˆÙŠØ¨',
+      webSearchDesc: 'Ø§Ø¨Ø­Ø« Ø¹Ù† Ø£Ø®Ø¨Ø§Ø± ÙˆÙ…Ø¹Ù„ÙˆÙ…Ø§Øª ÙÙŠ Ø§Ù„ÙˆÙ‚Øª Ø§Ù„ÙØ¹Ù„ÙŠ',
+      studyLearn: 'Ø§Ù„Ø¯Ø±Ø§Ø³Ø© ÙˆØ§Ù„ØªØ¹Ù„Ù…',
+      studyLearnDesc: 'ØªØ¹Ù„Ù… Ù…ÙÙ‡ÙˆÙ…Ø§Ù‹ Ø¬Ø¯ÙŠØ¯Ø§Ù‹',
+      exploreTools: 'Ø§Ø³ØªÙƒØ´Ù Ø§Ù„Ø£Ø¯ÙˆØ§Øª',
       // Messages
-      languageChanged: 'تم تغيير اللغة إلى'
+      languageChanged: 'ØªÙ… ØªØºÙŠÙŠØ± Ø§Ù„Ù„ØºØ© Ø¥Ù„Ù‰'
     }
   }
 };
@@ -310,7 +310,7 @@ async function callGeminiAPI(prompt) {
       CONFIG.MESSAGES.error_api_call_failed
     );
   } catch (err) {
-    return "❌ " + err.message;
+    return "âŒ " + err.message;
   }
 }
 
