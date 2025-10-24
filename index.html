@@ -71,9 +71,61 @@
         .markdown-content p { margin-bottom: 0.5em; }
         .markdown-content ul, .markdown-content ol { list-style-position: inside; margin-left: 1.5em; margin-bottom: 0.5em; }
         .markdown-content code { background-color: #383838; padding: 2px 4px; border-radius: 4px; }
-        .markdown-content pre { background-color: #1a1a1a; padding: 10px; border-radius: 6px; overflow-x: auto; margin-top: 1em; margin-bottom: 1em; border: 1px solid #1f1f1f; }
+        .markdown-content pre { background-color: #1a1a1a; padding: 10px; border-radius: 6px; overflow-x: auto; margin-top: 1em; margin-bottom: 1em; border: 1px solid #1f1f1f; position: relative; }
         .ai-bubble-footer { border-top: 1px solid #1a1a1a; }
         .ai-bubble-footer button { color: var(--text-faded); }
+        
+        .code-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+        .code-action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.2s;
+        }
+        .code-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        #html-preview-modal {
+            background: rgba(0, 0, 0, 0.95);
+        }
+        .preview-container {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            max-width: 95%;
+            max-height: 90%;
+            display: flex;
+            flex-direction: column;
+        }
+        .preview-header {
+            background: #1f1f1f;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        .preview-iframe {
+            width: 100%;
+            height: 70vh;
+            border: none;
+            background: white;
+        }
 
         /* --- Typing Cursor Animation --- */
         .typing-cursor {
@@ -123,7 +175,7 @@
                     <span id="sidebar-library">Library</span>
                 </a>
 
-                <a href="#" onclick="showFeatureNotAvailable('GPTs'); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white">
+                <a href="#" onclick="openGPTsModal(); toggleSidebar();" class="flex items-center p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-white">
                     <i data-lucide="bot" class="w-5 h-5 mr-3 text-red-400"></i>
                     <span id="sidebar-gpts">GPTs</span>
                 </a>
@@ -286,6 +338,15 @@
                     <p id="tool-study-desc" class="text-xs text-gray-400">Learn a new concept</p>
                 </div>
             </button>
+
+            <!-- Code & HTML Helper -->
+            <button onclick="handleToolAction('Code & HTML', CONFIG.PROMPTS.coding)" class="w-full flex items-center p-4 rounded-xl text-left hover:bg-gray-900 transition-colors">
+                <i data-lucide="code" class="w-6 h-6 mr-4 text-cyan-400"></i>
+                <div>
+                    <p id="tool-coding" class="font-semibold text-white">Code & HTML</p>
+                    <p id="tool-coding-desc" class="text-xs text-gray-400">Generate and preview HTML/CSS/JS code</p>
+                </div>
+            </button>
         </div>
 
         <!-- Explore Tools Button -->
@@ -336,6 +397,64 @@
 
         </div>
     </footer>
+
+    <!-- HTML PREVIEW MODAL -->
+    <div id="html-preview-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="preview-container">
+            <div class="preview-header">
+                <h3 class="text-white font-semibold">HTML Preview</h3>
+                <button onclick="closePreviewModal()" class="text-white hover:text-gray-300">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <iframe id="preview-iframe" class="preview-iframe" sandbox="allow-scripts"></iframe>
+        </div>
+    </div>
+
+    <!-- GPTs / API KEY SELECTION MODAL -->
+    <div id="gpts-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
+        <div class="bg-[#1f1f1f] rounded-2xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Select AI Model</h2>
+                <button onclick="closeGPTsModal()" class="text-gray-400 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3">
+                <!-- Gemini / Kgpt fast -->
+                <button onclick="selectAPIKey('GEMINI')" id="api-btn-gemini" class="w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all hover:bg-gray-800" style="border-color: #6d28d9; background-color: rgba(109, 40, 217, 0.1);">
+                    <div class="flex items-center">
+                        <i data-lucide="zap" class="w-6 h-6 mr-3 text-yellow-400"></i>
+                        <div class="text-left">
+                            <p class="font-semibold text-white">Kgpt fast</p>
+                            <p class="text-xs text-gray-400">Powered by Gemini</p>
+                        </div>
+                    </div>
+                    <i data-lucide="check-circle" class="w-6 h-6 text-purple-400" id="check-gemini"></i>
+                </button>
+                
+                <!-- OpenAI / Kgpt smart -->
+                <button onclick="selectAPIKey('OPENAI')" id="api-btn-openai" class="w-full flex items-center justify-between p-4 rounded-xl border-2 border-gray-700 transition-all hover:bg-gray-800">
+                    <div class="flex items-center">
+                        <i data-lucide="brain" class="w-6 h-6 mr-3 text-blue-400"></i>
+                        <div class="text-left">
+                            <p class="font-semibold text-white">Kgpt smart</p>
+                            <p class="text-xs text-gray-400">Powered by OpenAI</p>
+                        </div>
+                    </div>
+                    <i data-lucide="circle" class="w-6 h-6 text-gray-600" id="check-openai"></i>
+                </button>
+            </div>
+            
+            <div class="mt-6 p-4 bg-gray-800 rounded-lg">
+                <p class="text-xs text-gray-400">
+                    <i data-lucide="info" class="w-4 h-4 inline mr-1"></i>
+                    Switch between models anytime. Your chat history will be preserved.
+                </p>
+            </div>
+        </div>
+    </div>
 
 </body>
     </html>
